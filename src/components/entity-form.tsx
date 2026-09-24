@@ -44,7 +44,7 @@ function RelationSelect({
       <SelectContent>
         <SelectItem value={NONE}>None</SelectItem>
         {data.map((row) => (
-          <SelectItem key={row.id} value={row.id}>
+          <SelectItem key={row["id"]} value={row["id"]}>
             {row[label] ?? "Untitled"}
           </SelectItem>
         ))}
@@ -75,10 +75,10 @@ export function EntityFormDialog({
   table: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  record?: Row | null;
-  defaults?: Row;
-  title?: string;
-  onSaved?: (row: Row) => void;
+  record?: Row | null | undefined;
+  defaults?: Row | undefined;
+  title?: string | undefined;
+  onSaved?: ((row: Row) => void) | undefined;
 }) {
   const fields = entityFields[table] ?? [];
   const [values, setValues] = useState<Row>(() => emptyValues(fields, defaults));
@@ -88,7 +88,7 @@ export function EntityFormDialog({
   useEffect(() => {
     if (!open) return;
     if (record) {
-      const next: Row = { id: record.id };
+      const next: Row = { id: record["id"] };
       for (const f of fields) {
         const v = record[f.name];
         next[f.name] = f.type === "tags" ? (Array.isArray(v) ? v.join(", ") : "") : (v ?? "");
@@ -99,7 +99,7 @@ export function EntityFormDialog({
     }
     setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, record?.id]);
+  }, [open, record?.["id"]]);
 
   const grouped = useMemo(() => fields, [fields]);
 
@@ -120,7 +120,7 @@ export function EntityFormDialog({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const payload: Row = record?.id ? { id: record.id } : {};
+    const payload: Row = record?.["id"] ? { id: record["id"] } : {};
     for (const f of fields) {
       const raw = values[f.name];
       if (f.type === "number" || f.type === "progress") {
