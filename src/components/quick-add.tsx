@@ -57,8 +57,10 @@ export function QuickAdd() {
         <EntityFormDialog
           table={table}
           open={Boolean(table)}
-          onOpenChange={(open) => !open && setTable(null)}
-          title={items.find((i) => i.table === table)?.label}
+          onOpenChange={(open) => {
+            if (!open) setTable(null);
+          }}
+          title={items.find((i) => i.table === table)?.label ?? "New entry"}
         />
       ) : null}
     </>

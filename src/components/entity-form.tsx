@@ -75,10 +75,10 @@ export function EntityFormDialog({
   table: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  record?: Row | null;
-  defaults?: Row;
-  title?: string;
-  onSaved?: (row: Row) => void;
+  record?: Row | null | undefined;
+  defaults?: Row | undefined;
+  title?: string | undefined;
+  onSaved?: ((row: Row) => void) | undefined;
 }) {
   const fields = entityFields[table] ?? [];
   const [values, setValues] = useState<Row>(() => emptyValues(fields, defaults));
