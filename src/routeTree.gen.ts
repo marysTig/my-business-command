@@ -13,6 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppResourcesRouteImport } from './routes/_app.resources'
+import { Route as AppTasksRouteImport } from './routes/_app.tasks'
+import { Route as AppLeadsIndexRouteImport } from './routes/_app.leads.index'
+import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
+import { Route as AppWebsitesIndexRouteImport } from './routes/_app.websites.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +38,51 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppResourcesRoute = AppResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeadsIndexRoute = AppLeadsIndexRouteImport.update({
+  id: '/leads/',
+  path: '/leads/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSaasIndexRoute = AppSaasIndexRouteImport.update({
+  id: '/saas/',
+  path: '/saas/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWebsitesIndexRoute = AppWebsitesIndexRouteImport.update({
+  id: '/websites/',
+  path: '/websites/',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/resources': typeof AppResourcesRoute
+  '/tasks': typeof AppTasksRoute
+  '/leads/': typeof AppLeadsIndexRoute
+  '/saas/': typeof AppSaasIndexRoute
+  '/websites/': typeof AppWebsitesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
+  '/resources': typeof AppResourcesRoute
+  '/tasks': typeof AppTasksRoute
+  '/leads': typeof AppLeadsIndexRoute
+  '/saas': typeof AppSaasIndexRoute
+  '/websites': typeof AppWebsitesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +90,44 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/resources': typeof AppResourcesRoute
+  '/_app/tasks': typeof AppTasksRoute
+  '/_app/leads/': typeof AppLeadsIndexRoute
+  '/_app/saas/': typeof AppSaasIndexRoute
+  '/_app/websites/': typeof AppWebsitesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/resources'
+    | '/tasks'
+    | '/leads/'
+    | '/saas/'
+    | '/websites/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard'
-  id: '__root__' | '/' | '/_app' | '/auth' | '/_app/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/resources'
+    | '/tasks'
+    | '/leads'
+    | '/saas'
+    | '/websites'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/auth'
+    | '/_app/dashboard'
+    | '/_app/resources'
+    | '/_app/tasks'
+    | '/_app/leads/'
+    | '/_app/saas/'
+    | '/_app/websites/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,15 +166,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/resources': {
+      id: '/_app/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof AppResourcesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/leads/': {
+      id: '/_app/leads/'
+      path: '/leads'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof AppLeadsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/saas/': {
+      id: '/_app/saas/'
+      path: '/saas'
+      fullPath: '/saas/'
+      preLoaderRoute: typeof AppSaasIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/websites/': {
+      id: '/_app/websites/'
+      path: '/websites'
+      fullPath: '/websites/'
+      preLoaderRoute: typeof AppWebsitesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppResourcesRoute: typeof AppResourcesRoute
+  AppTasksRoute: typeof AppTasksRoute
+  AppLeadsIndexRoute: typeof AppLeadsIndexRoute
+  AppSaasIndexRoute: typeof AppSaasIndexRoute
+  AppWebsitesIndexRoute: typeof AppWebsitesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppResourcesRoute: AppResourcesRoute,
+  AppTasksRoute: AppTasksRoute,
+  AppLeadsIndexRoute: AppLeadsIndexRoute,
+  AppSaasIndexRoute: AppSaasIndexRoute,
+  AppWebsitesIndexRoute: AppWebsitesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
