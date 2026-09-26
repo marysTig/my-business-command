@@ -14,8 +14,12 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppResourcesRouteImport } from './routes/_app.resources'
+import { Route as AppSearchRouteImport } from './routes/_app.search'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppLeadsIndexRouteImport } from './routes/_app.leads.index'
+import { Route as AppProductsIndexRouteImport } from './routes/_app.products.index'
 import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
 import { Route as AppWebsitesIndexRouteImport } from './routes/_app.websites.index'
 
@@ -43,14 +47,34 @@ const AppResourcesRoute = AppResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSearchRoute = AppSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeadsIndexRoute = AppLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSaasIndexRoute = AppSaasIndexRouteImport.update({
@@ -69,8 +93,12 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/resources': typeof AppResourcesRoute
+  '/search': typeof AppSearchRoute
+  '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/customers/': typeof AppCustomersIndexRoute
   '/leads/': typeof AppLeadsIndexRoute
+  '/products/': typeof AppProductsIndexRoute
   '/saas/': typeof AppSaasIndexRoute
   '/websites/': typeof AppWebsitesIndexRoute
 }
@@ -79,8 +107,12 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AppDashboardRoute
   '/resources': typeof AppResourcesRoute
+  '/search': typeof AppSearchRoute
+  '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/customers': typeof AppCustomersIndexRoute
   '/leads': typeof AppLeadsIndexRoute
+  '/products': typeof AppProductsIndexRoute
   '/saas': typeof AppSaasIndexRoute
   '/websites': typeof AppWebsitesIndexRoute
 }
@@ -91,8 +123,12 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/resources': typeof AppResourcesRoute
+  '/_app/search': typeof AppSearchRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/leads/': typeof AppLeadsIndexRoute
+  '/_app/products/': typeof AppProductsIndexRoute
   '/_app/saas/': typeof AppSaasIndexRoute
   '/_app/websites/': typeof AppWebsitesIndexRoute
 }
@@ -103,8 +139,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/resources'
+    | '/search'
+    | '/settings'
     | '/tasks'
+    | '/customers/'
     | '/leads/'
+    | '/products/'
     | '/saas/'
     | '/websites/'
   fileRoutesByTo: FileRoutesByTo
@@ -113,8 +153,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/resources'
+    | '/search'
+    | '/settings'
     | '/tasks'
+    | '/customers'
     | '/leads'
+    | '/products'
     | '/saas'
     | '/websites'
   id:
@@ -124,8 +168,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/dashboard'
     | '/_app/resources'
+    | '/_app/search'
+    | '/_app/settings'
     | '/_app/tasks'
+    | '/_app/customers/'
     | '/_app/leads/'
+    | '/_app/products/'
     | '/_app/saas/'
     | '/_app/websites/'
   fileRoutesById: FileRoutesById
@@ -173,6 +221,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppResourcesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/search': {
+      id: '/_app/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof AppSearchRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tasks': {
       id: '/_app/tasks'
       path: '/tasks'
@@ -180,11 +242,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTasksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leads/': {
       id: '/_app/leads/'
       path: '/leads'
       fullPath: '/leads/'
       preLoaderRoute: typeof AppLeadsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/products/': {
+      id: '/_app/products/'
+      path: '/products'
+      fullPath: '/products/'
+      preLoaderRoute: typeof AppProductsIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/saas/': {
@@ -207,8 +283,12 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppResourcesRoute: typeof AppResourcesRoute
+  AppSearchRoute: typeof AppSearchRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppLeadsIndexRoute: typeof AppLeadsIndexRoute
+  AppProductsIndexRoute: typeof AppProductsIndexRoute
   AppSaasIndexRoute: typeof AppSaasIndexRoute
   AppWebsitesIndexRoute: typeof AppWebsitesIndexRoute
 }
@@ -216,8 +296,12 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppResourcesRoute: AppResourcesRoute,
+  AppSearchRoute: AppSearchRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppLeadsIndexRoute: AppLeadsIndexRoute,
+  AppProductsIndexRoute: AppProductsIndexRoute,
   AppSaasIndexRoute: AppSaasIndexRoute,
   AppWebsitesIndexRoute: AppWebsitesIndexRoute,
 }
