@@ -18,8 +18,10 @@ import { Route as AppSearchRouteImport } from './routes/_app.search'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
+import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
 import { Route as AppLeadsIndexRouteImport } from './routes/_app.leads.index'
 import { Route as AppProductsIndexRouteImport } from './routes/_app.products.index'
+import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
 import { Route as AppPropertiesIndexRouteImport } from './routes/_app.properties.index'
 import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
 import { Route as AppSaasIdRouteImport } from './routes/_app.saas.$id'
@@ -70,6 +72,11 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
+  id: '/customers/$id',
+  path: '/customers/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeadsIndexRoute = AppLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
@@ -78,6 +85,11 @@ const AppLeadsIndexRoute = AppLeadsIndexRouteImport.update({
 const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProductsIdRoute = AppProductsIdRouteImport.update({
+  id: '/products/$id',
+  path: '/products/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPropertiesIndexRoute = AppPropertiesIndexRouteImport.update({
@@ -114,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/customers/$id': typeof AppCustomersIdRoute
+  '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/customers/': typeof AppCustomersIndexRoute
@@ -131,6 +145,8 @@ export interface FileRoutesByTo {
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/customers/$id': typeof AppCustomersIdRoute
+  '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/customers': typeof AppCustomersIndexRoute
@@ -150,6 +166,8 @@ export interface FileRoutesById {
   '/_app/search': typeof AppSearchRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/_app/customers/$id': typeof AppCustomersIdRoute
+  '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/saas/$id': typeof AppSaasIdRoute
   '/_app/websites/$id': typeof AppWebsitesIdRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
@@ -169,6 +187,8 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/tasks'
+    | '/customers/$id'
+    | '/products/$id'
     | '/saas/$id'
     | '/websites/$id'
     | '/customers/'
@@ -186,6 +206,8 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/tasks'
+    | '/customers/$id'
+    | '/products/$id'
     | '/saas/$id'
     | '/websites/$id'
     | '/customers'
@@ -204,6 +226,8 @@ export interface FileRouteTypes {
     | '/_app/search'
     | '/_app/settings'
     | '/_app/tasks'
+    | '/_app/customers/$id'
+    | '/_app/products/$id'
     | '/_app/saas/$id'
     | '/_app/websites/$id'
     | '/_app/customers/'
@@ -285,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/customers/$id': {
+      id: '/_app/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof AppCustomersIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leads/': {
       id: '/_app/leads/'
       path: '/leads'
@@ -297,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products/'
       preLoaderRoute: typeof AppProductsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/products/$id': {
+      id: '/_app/products/$id'
+      path: '/products/$id'
+      fullPath: '/products/$id'
+      preLoaderRoute: typeof AppProductsIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/properties/': {
@@ -343,6 +381,8 @@ interface AppRouteChildren {
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
+  AppCustomersIdRoute: typeof AppCustomersIdRoute
+  AppProductsIdRoute: typeof AppProductsIdRoute
   AppSaasIdRoute: typeof AppSaasIdRoute
   AppWebsitesIdRoute: typeof AppWebsitesIdRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
@@ -359,6 +399,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
+  AppCustomersIdRoute: AppCustomersIdRoute,
+  AppProductsIdRoute: AppProductsIdRoute,
   AppSaasIdRoute: AppSaasIdRoute,
   AppWebsitesIdRoute: AppWebsitesIdRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,

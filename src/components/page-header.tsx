@@ -18,7 +18,7 @@ export function PageHeader({
       <div>
         {backTo ? (
           <Link
-            to={backTo}
+            to={backTo as never}
             className="mb-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="size-3.5" /> Back
