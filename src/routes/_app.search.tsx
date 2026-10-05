@@ -1,18 +1,15 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { fallback, zodValidator } from "@tanstack/zod-adapter";
-import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { useRows } from "@/lib/db";
 import { entityLabels, entityRoutes, labelColumn, searchColumns } from "@/lib/entities";
 
-const searchSchema = z.object({
-  q: fallback(z.string(), "").default(""),
-});
 
 export const Route = createFileRoute("/_app/search")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): { q: string } => ({
+    q: typeof search["q"] === "string" ? search["q"] : "",
+  }),
   head: () => ({
     meta: [
       { title: "Search — My Business OS" },
