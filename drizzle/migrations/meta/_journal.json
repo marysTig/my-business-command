@@ -8,6 +8,13 @@
       "when": 1790094167094,
       "tag": "0000_business_os_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791246230945,
+      "tag": "0001_open_access_no_auth",
+      "breakpoints": true
     }
   ]
 }

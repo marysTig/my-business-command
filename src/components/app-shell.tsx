@@ -6,7 +6,6 @@ import {
   Globe,
   LayoutDashboard,
   Library,
-  LogOut,
   Menu,
   Package,
   Search,
@@ -20,8 +19,6 @@ import { QuickAdd } from "@/components/quick-add";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useSession } from "@/hooks/use-session";
-import { supabase } from "@/integrations/supabase/client";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -70,14 +67,8 @@ function Brand() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const { user } = useSession();
   const [term, setTerm] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
-  }
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -91,12 +82,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Brand />
         <div className="mt-6 flex-1">
           <NavList />
-        </div>
-        <div className="border-t border-border pt-3">
-          <p className="truncate px-3 pb-2 text-xs text-muted-foreground">{user?.email}</p>
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={signOut}>
-            <LogOut className="size-4" /> Sign out
-          </Button>
         </div>
       </aside>
 
@@ -113,11 +98,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Brand />
               <div className="mt-6">
                 <NavList onNavigate={() => setMobileOpen(false)} />
-              </div>
-              <div className="mt-6 border-t border-border pt-3">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={signOut}>
-                  <LogOut className="size-4" /> Sign out
-                </Button>
               </div>
             </SheetContent>
           </Sheet>
