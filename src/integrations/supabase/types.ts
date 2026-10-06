@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -31,7 +31,7 @@ export type Database = {
           status: string
           supabase_project: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
           vercel_project: string | null
           website_url: string | null
         }
@@ -51,7 +51,7 @@ export type Database = {
           status?: string
           supabase_project?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           vercel_project?: string | null
           website_url?: string | null
         }
@@ -71,7 +71,7 @@ export type Database = {
           status?: string
           supabase_project?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
           vercel_project?: string | null
           website_url?: string | null
         }
@@ -93,7 +93,7 @@ export type Database = {
           product_type: string | null
           purchase_date: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           access_status?: string
@@ -110,7 +110,7 @@ export type Database = {
           product_type?: string | null
           purchase_date?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           access_status?: string
@@ -127,7 +127,7 @@ export type Database = {
           product_type?: string | null
           purchase_date?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -153,7 +153,7 @@ export type Database = {
           product_type: string
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -168,7 +168,7 @@ export type Database = {
           product_type?: string
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -183,7 +183,7 @@ export type Database = {
           product_type?: string
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -201,7 +201,7 @@ export type Database = {
           source: string | null
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           budget?: number | null
@@ -216,7 +216,7 @@ export type Database = {
           source?: string | null
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           budget?: number | null
@@ -231,7 +231,7 @@ export type Database = {
           source?: string | null
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -275,7 +275,7 @@ export type Database = {
           surface: number | null
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           bathrooms?: number | null
@@ -295,7 +295,7 @@ export type Database = {
           surface?: number | null
           title: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           bathrooms?: number | null
@@ -315,7 +315,7 @@ export type Database = {
           surface?: number | null
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -379,7 +379,7 @@ export type Database = {
           lead_id: string
           notes: string | null
           property_id: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -387,7 +387,7 @@ export type Database = {
           lead_id: string
           notes?: string | null
           property_id: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -395,7 +395,7 @@ export type Database = {
           lead_id?: string
           notes?: string | null
           property_id?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -429,7 +429,7 @@ export type Database = {
           tags: string[]
           updated_at: string
           url: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           category?: string
@@ -445,7 +445,7 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           url?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           category?: string
@@ -461,7 +461,7 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           url?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -508,7 +508,7 @@ export type Database = {
           status: string
           target_date: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -523,7 +523,7 @@ export type Database = {
           status?: string
           target_date?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -538,7 +538,7 @@ export type Database = {
           status?: string
           target_date?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -556,7 +556,7 @@ export type Database = {
           provider_reference: string | null
           purchase_date: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           amount?: number
@@ -571,7 +571,7 @@ export type Database = {
           provider_reference?: string | null
           purchase_date?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -586,7 +586,7 @@ export type Database = {
           provider_reference?: string | null
           purchase_date?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -621,7 +621,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           category?: string | null
@@ -638,7 +638,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Update: {
           category?: string | null
@@ -655,7 +655,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

@@ -1,19 +1,16 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { PageHeader } from "@/components/page-header";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSession } from "@/hooks/use-session";
-import { supabase } from "@/integrations/supabase/client";
 import { useRows } from "@/lib/db";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({
     meta: [
       { title: "Settings — My Business OS" },
-      { name: "description", content: "Account details and workspace overview." },
+      { name: "description", content: "Workspace overview." },
       { property: "og:title", content: "Settings — My Business OS" },
-      { property: "og:description", content: "Account details and workspace overview." },
+      { property: "og:description", content: "Workspace overview." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,8 +19,6 @@ export const Route = createFileRoute("/_app/settings")({
 });
 
 function SettingsPage() {
-  const { user } = useSession();
-  const navigate = useNavigate();
   const counts = {
     "Client websites": useRows("client_websites", {}).data?.length ?? 0,
     "SaaS projects": useRows("saas_projects", {}).data?.length ?? 0,
@@ -37,30 +32,17 @@ function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Your account and workspace." />
+      <PageHeader title="Settings" description="Your workspace." />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Account</CardTitle>
+          <CardTitle className="text-base">About</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          <p>
-            <span className="text-muted-foreground">Signed in as </span>
-            {user?.email}
-          </p>
           <p className="text-muted-foreground">
-            Your data is private: every record is tied to your account and only you can read it.
-            Never store passwords or secret keys in this dashboard — keep links only.
+            This is your personal command center — no sign-in required. Never store passwords or
+            secret keys in this dashboard — keep links only.
           </p>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/auth", replace: true });
-            }}
-          >
-            Sign out
-          </Button>
         </CardContent>
       </Card>
 
