@@ -73,13 +73,13 @@ export const PROPERTY_STATUSES = [
   "Archived",
 ] as const;
 
-export const LEAD_STATUSES = [
+export const CAR_BUYER_STATUSES = [
   "New",
   "Contacted",
-  "Interested",
-  "Visit",
+  "Visit Planned",
+  "Visited",
   "Negotiation",
-  "Converted",
+  "Sold",
   "Lost",
 ] as const;
 
@@ -116,7 +116,6 @@ export const CURRENCIES = ["USD", "EUR", "DZD", "GBP"] as const;
 export const linkFields: Field[] = [
   { name: "client_website_id", label: "Client website", type: "relation", relation: "client_websites", group: "Links" },
   { name: "saas_project_id", label: "SaaS project", type: "relation", relation: "saas_projects", group: "Links" },
-  { name: "property_id", label: "Property", type: "relation", relation: "properties", group: "Links" },
   { name: "digital_product_id", label: "Digital product", type: "relation", relation: "digital_products", group: "Links" },
 ];
 
@@ -160,30 +159,13 @@ export const saasFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
-export const propertyFields: Field[] = [
-  { name: "title", label: "Title", type: "text", required: true },
-  { name: "description", label: "Description", type: "textarea" },
-  { name: "property_type", label: "Type", type: "select", options: PROPERTY_TYPES },
-  { name: "status", label: "Status", type: "select", options: PROPERTY_STATUSES },
-  { name: "city", label: "City", type: "text" },
-  { name: "commune", label: "Commune", type: "text" },
-  { name: "price", label: "Price", type: "number" },
-  { name: "surface", label: "Surface (m²)", type: "number" },
-  { name: "bedrooms", label: "Bedrooms", type: "number" },
-  { name: "bathrooms", label: "Bathrooms", type: "number" },
-  { name: "marketplace_url", label: "Marketplace URL", type: "url" },
-  { name: "notes", label: "Notes", type: "textarea" },
-];
-
-export const leadFields: Field[] = [
+export const carBuyerFields: Field[] = [
   { name: "name", label: "Name", type: "text", required: true },
-  { name: "phone", label: "Phone", type: "text" },
-  { name: "email", label: "Email", type: "text" },
-  { name: "source", label: "Source", type: "text" },
-  { name: "status", label: "Status", type: "select", options: LEAD_STATUSES },
-  { name: "budget", label: "Budget", type: "number" },
-  { name: "desired_city", label: "Desired city", type: "text" },
-  { name: "desired_property_type", label: "Desired type", type: "select", options: PROPERTY_TYPES },
+  { name: "phone", label: "Phone number", type: "text" },
+  { name: "address", label: "Address", type: "text" },
+  { name: "visit_date", label: "Visit date (date they want to come)", type: "date" },
+  { name: "car_interest", label: "Car they're interested in", type: "text" },
+  { name: "status", label: "Status", type: "select", options: CAR_BUYER_STATUSES },
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
