@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      car_buyers: {
+        Row: {
+          address: string | null
+          car_interest: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+          visit_date: string | null
+        }
+        Insert: {
+          address?: string | null
+          car_interest?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          visit_date?: string | null
+        }
+        Update: {
+          address?: string | null
+          car_interest?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+          visit_date?: string | null
+        }
+        Relationships: []
+      }
       client_websites: {
         Row: {
           client_email: string | null
