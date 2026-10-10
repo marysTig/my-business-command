@@ -27,8 +27,7 @@ const tables = [
   "tasks",
   "client_websites",
   "saas_projects",
-  "properties",
-  "leads",
+  "car_buyers",
   "digital_products",
   "customers",
   "resources",
@@ -57,7 +56,7 @@ function SearchPage() {
       <PageHeader title="Search" description={q ? `Results for “${q}”` : "Type in the search bar above."} />
 
       {!term ? (
-        <EmptyState title="Search everything" description="Tasks, websites, projects, properties, leads, products, customers and resources." />
+        <EmptyState title="Search everything" description="Tasks, websites, projects, car buyers, products, customers and resources." />
       ) : total === 0 ? (
         <EmptyState title="No matches" description={`Nothing found for “${q}”.`} />
       ) : (

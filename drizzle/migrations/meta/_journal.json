@@ -15,6 +15,13 @@
       "when": 1791246230945,
       "tag": "0001_open_access_no_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791595521703,
+      "tag": "0002_add_car_buyers_deprecate_real_estate",
+      "breakpoints": true
     }
   ]
 }

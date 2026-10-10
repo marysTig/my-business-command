@@ -1,12 +1,11 @@
 import {
   Briefcase,
-  Building2,
+  Car,
   CheckSquare,
   Globe,
   Library,
   Package,
   Plus,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -24,8 +23,7 @@ const items = [
   { table: "tasks", label: "Add Task", icon: CheckSquare },
   { table: "client_websites", label: "Add Client Website", icon: Globe },
   { table: "saas_projects", label: "Add SaaS Project", icon: Briefcase },
-  { table: "properties", label: "Add Property", icon: Building2 },
-  { table: "leads", label: "Add Real Estate Lead", icon: UserPlus },
+  { table: "car_buyers", label: "Add Car Buyer", icon: Car },
   { table: "digital_products", label: "Add Digital Product", icon: Package },
   { table: "customers", label: "Add Customer", icon: Users },
   { table: "resources", label: "Add Resource", icon: Library },

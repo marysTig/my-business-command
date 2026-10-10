@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
-  Building2,
+  Car,
   CheckSquare,
   Globe,
   LayoutDashboard,
@@ -10,7 +10,6 @@ import {
   Package,
   Search,
   Settings,
-  UserPlus,
   Users,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -25,8 +24,7 @@ const nav = [
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/websites", label: "Client Websites", icon: Globe },
   { to: "/saas", label: "SaaS Projects", icon: Briefcase },
-  { to: "/properties", label: "Real Estate", icon: Building2 },
-  { to: "/leads", label: "Leads", icon: UserPlus },
+  { to: "/cars", label: "Car Buyers", icon: Car },
   { to: "/products", label: "Digital Products", icon: Package },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/resources", label: "Resources", icon: Library },

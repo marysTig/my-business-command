@@ -1,12 +1,11 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   Briefcase,
-  Building2,
+  Car,
   CheckSquare,
   Globe,
   Package,
   TrendingUp,
-  UserPlus,
   Users,
 } from "lucide-react";
 
@@ -62,15 +61,14 @@ function Kpi({
 function Dashboard() {
   const websites = useRows("client_websites", {});
   const saas = useRows("saas_projects", {});
-  const properties = useRows("properties", {});
-  const leads = useRows("leads", {});
+  const carBuyers = useRows("car_buyers", {});
   const products = useRows("digital_products", {});
   const sales = useRows("sales", {});
   const customers = useRows("customers", {});
   const tasks = useRows("tasks", {});
 
   const loading =
-    websites.isLoading || tasks.isLoading || properties.isLoading || sales.isLoading;
+    websites.isLoading || tasks.isLoading || carBuyers.isLoading || sales.isLoading;
 
   const today = new Date().toISOString().slice(0, 10);
   const taskRows = tasks.data ?? [];
@@ -98,17 +96,11 @@ function Dashboard() {
       at: r["updated_at"] ?? r["created_at"],
       to: "/websites",
     })),
-    ...(properties.data ?? []).map((r) => ({
-      label: "Property added",
-      title: r["title"],
-      at: r["created_at"],
-      to: "/properties",
-    })),
-    ...(leads.data ?? []).map((r) => ({
-      label: "New real-estate lead",
+    ...(carBuyers.data ?? []).map((r) => ({
+      label: "New car buyer",
       title: r["name"],
       at: r["created_at"],
-      to: "/leads",
+      to: "/cars",
     })),
     ...salesRows.map((r) => ({
       label: "Digital product sale",
@@ -145,16 +137,16 @@ function Dashboard() {
         />
         <Kpi label="SaaS projects" value={(saas.data ?? []).length} icon={Briefcase} to="/saas" />
         <Kpi
-          label="Properties"
-          value={(properties.data ?? []).length}
-          icon={Building2}
-          to="/properties"
+          label="Car buyers"
+          value={(carBuyers.data ?? []).length}
+          icon={Car}
+          to="/cars"
         />
         <Kpi
-          label="Open leads"
-          value={(leads.data ?? []).filter((l) => !["Converted", "Lost"].includes(l["status"])).length}
-          icon={UserPlus}
-          to="/leads"
+          label="Visits planned"
+          value={(carBuyers.data ?? []).filter((l) => l["status"] === "Visit Planned").length}
+          icon={Car}
+          to="/cars"
         />
         <Kpi
           label="Digital products"
