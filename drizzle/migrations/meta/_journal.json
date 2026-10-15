@@ -29,6 +29,13 @@
       "when": 1792080520857,
       "tag": "0003_website_github_amounts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792080827133,
+      "tag": "0004_saas_vercel_and_email",
+      "breakpoints": true
     }
   ]
 }

@@ -547,6 +547,7 @@ export type Database = {
       }
       saas_projects: {
         Row: {
+          contact_email: string | null
           created_at: string
           description: string | null
           id: string
@@ -560,8 +561,10 @@ export type Database = {
           target_date: string | null
           updated_at: string
           user_id: string | null
+          vercel_url: string | null
         }
         Insert: {
+          contact_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -575,8 +578,10 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id?: string | null
+          vercel_url?: string | null
         }
         Update: {
+          contact_email?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -590,6 +595,7 @@ export type Database = {
           target_date?: string | null
           updated_at?: string
           user_id?: string | null
+          vercel_url?: string | null
         }
         Relationships: []
       }
