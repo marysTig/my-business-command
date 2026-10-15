@@ -7,6 +7,7 @@ import { LinkOut } from "@/components/external-link";
 import { LoadingCards } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
 import { DetailField, RelatedResources, RelatedTasks } from "@/components/related";
+import { SecretField } from "@/components/secret-field";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,6 +89,7 @@ function WebsiteDetail() {
             <DetailField label="Name" value={site["client_name"]} />
             <DetailField label="Phone" value={site["client_phone"] ?? "—"} />
             <DetailField label="Email" value={site["client_email"] ?? "—"} />
+            <SecretField label="Client password" value={site["client_password"]} />
           </CardContent>
         </Card>
 

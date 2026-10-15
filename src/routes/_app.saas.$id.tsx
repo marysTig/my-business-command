@@ -6,7 +6,7 @@ import { EntityFormDialog } from "@/components/entity-form";
 import { LinkOut } from "@/components/external-link";
 import { LoadingCards } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
-import { RelatedTasks, RelatedResources } from "@/components/related";
+import { DetailField, RelatedResources, RelatedTasks } from "@/components/related";
 import { SecretField } from "@/components/secret-field";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
