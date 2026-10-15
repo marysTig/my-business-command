@@ -5,6 +5,7 @@ export type FieldType =
   | "date"
   | "select"
   | "url"
+  | "password"
   | "tags"
   | "progress"
   | "relation";
@@ -147,6 +148,7 @@ export const websiteFields: Field[] = [
   { name: "domain", label: "Domain", type: "text" },
   { name: "vercel_project", label: "Vercel project URL", type: "url" },
   { name: "supabase_project", label: "Backend project URL", type: "url" },
+  { name: "client_password", label: "Client password", type: "password" },
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
@@ -159,6 +161,9 @@ export const saasFields: Field[] = [
   { name: "target_date", label: "Target date", type: "date" },
   { name: "repository_url", label: "Repository URL", type: "url" },
   { name: "production_url", label: "Production URL", type: "url" },
+  { name: "vercel_url", label: "Vercel URL", type: "url" },
+  { name: "contact_email", label: "Email", type: "text" },
+  { name: "access_password", label: "Password", type: "password" },
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
