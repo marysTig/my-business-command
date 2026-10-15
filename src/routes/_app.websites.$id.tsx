@@ -66,6 +66,16 @@ function WebsiteDetail() {
             />
             <DetailField label="Start date" value={formatDate(site["start_date"])} />
             <DetailField label="Deadline" value={formatDate(site["deadline"])} />
+            <DetailField label="Project amount" value={site["project_amount"] ?? "—"} />
+            <DetailField label="Amount paid" value={site["amount_paid"] ?? "—"} />
+            <DetailField
+              label="Remaining"
+              value={
+                site["project_amount"] != null
+                  ? Number(site["project_amount"]) - Number(site["amount_paid"] ?? 0)
+                  : "—"
+              }
+            />
             <DetailField label="Notes" value={site["notes"] ?? "—"} />
           </CardContent>
         </Card>
@@ -87,6 +97,7 @@ function WebsiteDetail() {
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <DetailField label="Website" value={<LinkOut url={site["website_url"]} label="Open site" />} />
+            <DetailField label="GitHub" value={<LinkOut url={site["github_url"]} label="GitHub repo" />} />
             <DetailField label="Domain" value={<LinkOut url={site["domain"]} label={site["domain"]} />} />
             <DetailField
               label="Vercel"
