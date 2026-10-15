@@ -1,0 +1,1 @@
+ALTER TABLE public.client_websites ADD COLUMN IF NOT EXISTS github_url text, ADD COLUMN IF NOT EXISTS project_amount numeric, ADD COLUMN IF NOT EXISTS amount_paid numeric;
