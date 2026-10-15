@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { Eye, EyeOff } from "lucide-react";
+
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,6 +86,7 @@ export function EntityFormDialog({
   const fields = entityFields[table] ?? [];
   const [values, setValues] = useState<Row>(() => emptyValues(fields, defaults));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const save = useSaveRow(table);
 
   useEffect(() => {
@@ -150,7 +154,8 @@ export function EntityFormDialog({
         <DialogHeader>
           <DialogTitle>{title ?? (record ? "Edit" : "New entry")}</DialogTitle>
           <DialogDescription>
-            Fill in the details. Never store passwords or secret keys here — links only.
+            Fill in the details. Passwords typed here are saved as plain text in your database —
+            keep your real accounts in a password manager.
           </DialogDescription>
         </DialogHeader>
 
@@ -206,6 +211,30 @@ export function EntityFormDialog({
                     <span className="w-12 text-right text-sm tabular-nums text-muted-foreground">
                       {Number(values[field.name] ?? 0)}%
                     </span>
+                  </div>
+                ) : field.type === "password" ? (
+                  <div className="relative">
+                    <Input
+                      id={field.name}
+                      type={revealed[field.name] ? "text" : "password"}
+                      value={values[field.name] ?? ""}
+                      placeholder={field.placeholder ?? "Hidden"}
+                      autoComplete="new-password"
+                      className="pr-10"
+                      onChange={(e) => setField(field.name, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setRevealed((p) => ({ ...p, [field.name]: !p[field.name] }))}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                      aria-label={revealed[field.name] ? "Hide" : "Show"}
+                    >
+                      {revealed[field.name] ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
                   </div>
                 ) : (
                   <Input
