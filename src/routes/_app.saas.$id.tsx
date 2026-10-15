@@ -7,6 +7,7 @@ import { LinkOut } from "@/components/external-link";
 import { LoadingCards } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
 import { DetailField, RelatedResources, RelatedTasks } from "@/components/related";
+import { SecretField } from "@/components/secret-field";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -72,6 +73,8 @@ function SaasDetail() {
             />
             <DetailField label="Start date" value={formatDate(project["start_date"])} />
             <DetailField label="Target date" value={formatDate(project["target_date"])} />
+            <DetailField label="Email" value={project["contact_email"] ?? "—"} />
+            <SecretField label="Password" value={project["access_password"]} />
             <DetailField label="Notes" value={project["notes"] ?? "—"} />
           </CardContent>
         </Card>
@@ -88,6 +91,10 @@ function SaasDetail() {
             <DetailField
               label="Production"
               value={<LinkOut url={project["production_url"]} label="Open production" />}
+            />
+            <DetailField
+              label="Vercel"
+              value={<LinkOut url={project["vercel_url"]} label="Open Vercel" />}
             />
           </CardContent>
         </Card>
