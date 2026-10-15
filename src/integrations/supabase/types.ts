@@ -58,6 +58,7 @@ export type Database = {
       }
       client_websites: {
         Row: {
+          amount_paid: number | null
           client_email: string | null
           client_name: string
           client_phone: string | null
@@ -65,9 +66,11 @@ export type Database = {
           deadline: string | null
           description: string | null
           domain: string | null
+          github_url: string | null
           id: string
           notes: string | null
           progress_percentage: number
+          project_amount: number | null
           project_name: string
           start_date: string | null
           status: string
@@ -78,6 +81,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          amount_paid?: number | null
           client_email?: string | null
           client_name: string
           client_phone?: string | null
@@ -85,9 +89,11 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           domain?: string | null
+          github_url?: string | null
           id?: string
           notes?: string | null
           progress_percentage?: number
+          project_amount?: number | null
           project_name: string
           start_date?: string | null
           status?: string
@@ -98,6 +104,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          amount_paid?: number | null
           client_email?: string | null
           client_name?: string
           client_phone?: string | null
@@ -105,9 +112,11 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           domain?: string | null
+          github_url?: string | null
           id?: string
           notes?: string | null
           progress_percentage?: number
+          project_amount?: number | null
           project_name?: string
           start_date?: string | null
           status?: string
