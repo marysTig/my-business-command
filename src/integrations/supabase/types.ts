@@ -61,6 +61,7 @@ export type Database = {
           amount_paid: number | null
           client_email: string | null
           client_name: string
+          client_password: string | null
           client_phone: string | null
           created_at: string
           deadline: string | null
@@ -84,6 +85,7 @@ export type Database = {
           amount_paid?: number | null
           client_email?: string | null
           client_name: string
+          client_password?: string | null
           client_phone?: string | null
           created_at?: string
           deadline?: string | null
@@ -107,6 +109,7 @@ export type Database = {
           amount_paid?: number | null
           client_email?: string | null
           client_name?: string
+          client_password?: string | null
           client_phone?: string | null
           created_at?: string
           deadline?: string | null
@@ -547,6 +550,7 @@ export type Database = {
       }
       saas_projects: {
         Row: {
+          access_password: string | null
           contact_email: string | null
           created_at: string
           description: string | null
@@ -564,6 +568,7 @@ export type Database = {
           vercel_url: string | null
         }
         Insert: {
+          access_password?: string | null
           contact_email?: string | null
           created_at?: string
           description?: string | null
@@ -581,6 +586,7 @@ export type Database = {
           vercel_url?: string | null
         }
         Update: {
+          access_password?: string | null
           contact_email?: string | null
           created_at?: string
           description?: string | null
