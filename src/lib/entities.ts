@@ -171,7 +171,7 @@ export const carBuyerFields: Field[] = [
   { name: "name", label: "Name", type: "text", required: true },
   { name: "phone", label: "Phone number", type: "text" },
   { name: "address", label: "Address", type: "text" },
-  { name: "visit_date", label: "Visit date (date they want to come)", type: "date" },
+  { name: "visit_date", label: "Date de visite", type: "date" },
   { name: "car_interest", label: "Car they're interested in", type: "text" },
   { name: "status", label: "Status", type: "select", options: CAR_BUYER_STATUSES },
   { name: "notes", label: "Notes", type: "textarea" },
