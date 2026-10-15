@@ -1,13 +1,14 @@
 # Roadmap
 
-## In progress
-- SaaS Projects form: add Vercel URL, email, and password field (user confirmed they want the password field).
-- Client Websites form: add client password field (user confirmed).
+## Done
+- SaaS Projects form: Vercel URL, email and password fields added and verified in the browser.
+- Client Websites form: client password field added and verified in the browser.
+- SaaS project page shows Vercel link, email and a hidden password with show/copy buttons.
+- Client website page shows the client password the same way.
+- Browser check: created, saved, opened and deleted a test project; no page errors.
 
 ## Open
-- Show the new SaaS fields (Vercel URL, email, password) on the SaaS project page.
-- Show the client password on the client website page.
-- Verify with a signed-out browser run: create/edit a SaaS project and a website, check the new fields save and reopen.
+- None.
 
 ## Notes
-- App has no sign-in; anyone with the link can read stored values. Password fields are stored as plain text — warn the user once per change, do not re-litigate.
+- App has no sign-in; anyone with the link can read stored values. Password fields are stored as plain text — the user was warned once and asked for the field anyway.
