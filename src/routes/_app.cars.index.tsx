@@ -32,7 +32,7 @@ function CarsPage() {
         { key: "phone", header: "Phone" },
         { key: "address", header: "Address" },
         { key: "car_interest", header: "Car" },
-        { key: "visit_date", header: "Visit date", render: (r) => formatDate(r["visit_date"]) },
+        { key: "visit_date", header: "Date de visite", render: (r) => formatDate(r["visit_date"]) },
         { key: "status", header: "Status", render: (r) => <StatusBadge value={r["status"]} /> },
       ]}
     />
