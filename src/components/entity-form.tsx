@@ -41,7 +41,7 @@ function RelationSelect({
   const label = labelColumn[field.relation!] ?? "name";
   return (
     <Select value={value || NONE} onValueChange={(v) => onChange(v === NONE ? "" : v)}>
-      <SelectTrigger>
+      <SelectTrigger id={field.name}>
         <SelectValue placeholder="None" />
       </SelectTrigger>
       <SelectContent>
