@@ -43,6 +43,13 @@
       "when": 1792080853281,
       "tag": "0005_add_password_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792456910930,
+      "tag": "0006_add_velora_clients_orders",
+      "breakpoints": true
     }
   ]
 }
