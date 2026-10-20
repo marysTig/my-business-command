@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney, useRows } from "@/lib/db";
-import { VELORA_FINANCING_STATUSES, VELORA_ORDER_STATUSES } from "@/lib/entities";
+import { VELORA_ORDER_STATUSES } from "@/lib/entities";
 
 export const Route = createFileRoute("/_app/velora/")({
   head: () => ({
@@ -119,8 +119,6 @@ function VeloraPage() {
           table="velora_clients"
           title="Velora Clients"
           description="Everyone who buys from Velora, with their contact details."
-          statusOptions={VELORA_FINANCING_STATUSES}
-          detailPath="/velora/$id"
           columns={[
             { key: "name", header: "Client" },
             { key: "phone", header: "Phone" },

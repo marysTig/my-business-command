@@ -28,6 +28,8 @@ const tables = [
   "client_websites",
   "saas_projects",
   "car_buyers",
+  "velora_clients",
+  "velora_orders",
   "digital_products",
   "customers",
   "resources",
