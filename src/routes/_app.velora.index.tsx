@@ -129,11 +129,18 @@ function VeloraPage() {
       </TabsContent>
 
       <TabsContent value="depenses">
-        {orderPage("Dépenses", "Les dépenses de chaque commande.", [
-          item, client,
-          { key: "expenses", header: "Dépenses", render: money("expenses") },
-          { key: "notes", header: "Notes" },
-        ])}
+        <CrudPage
+          table="velora_expenses"
+          title="Dépenses"
+          description="Toutes les dépenses de Velora."
+          columns={[
+            { key: "label", header: "Dépense" },
+            { key: "category", header: "Catégorie" },
+            { key: "expense_date", header: "Date", render: (r) => formatDate(r["expense_date"]) },
+            { key: "amount", header: "Montant", render: money("amount") },
+            { key: "notes", header: "Notes" },
+          ]}
+        />
       </TabsContent>
     </Tabs>
   );

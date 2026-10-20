@@ -234,6 +234,15 @@ export const veloraOrderFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
+export const veloraExpenseFields: Field[] = [
+  { name: "label", label: "Dépense", type: "text", required: true },
+  { name: "amount", label: "Montant", type: "number" },
+  { name: "currency", label: "Devise", type: "select", options: VELORA_CURRENCIES },
+  { name: "expense_date", label: "Date", type: "date" },
+  { name: "category", label: "Catégorie", type: "text" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
 export const productFields: Field[] = [
   { name: "product_name", label: "Product name", type: "text", required: true },
   { name: "description", label: "Description", type: "textarea" },
@@ -288,6 +297,7 @@ export const labelColumn: Record<string, string> = {
   car_buyers: "name",
   velora_clients: "name",
   velora_orders: "item",
+  velora_expenses: "label",
   digital_products: "product_name",
   customers: "name",
   resources: "name",
@@ -299,6 +309,7 @@ export const searchColumns: Record<string, string[]> = {
   saas_projects: ["project_name", "description", "notes"],
   car_buyers: ["name", "phone", "address", "car_interest", "notes"],
   velora_clients: ["name", "phone", "email", "address", "city", "notes"],
+  velora_expenses: ["label", "category", "notes"],
   velora_orders: ["item", "financing_org", "notes", "status", "financing_status"],
   digital_products: ["product_name", "description", "notes"],
   customers: ["name", "email", "phone", "notes"],
@@ -312,6 +323,7 @@ export const entityRoutes: Record<string, string> = {
   car_buyers: "/cars",
   velora_clients: "/velora",
   velora_orders: "/velora",
+  velora_expenses: "/velora",
   digital_products: "/products",
   customers: "/customers",
   resources: "/resources",
@@ -336,6 +348,7 @@ export const entityFields: Record<string, Field[]> = {
   car_buyers: carBuyerFields,
   velora_clients: veloraClientFields,
   velora_orders: veloraOrderFields,
+  velora_expenses: veloraExpenseFields,
   digital_products: productFields,
   customers: customerFields,
   resources: resourceFields,

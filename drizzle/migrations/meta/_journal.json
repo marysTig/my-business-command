@@ -50,6 +50,13 @@
       "when": 1792456910930,
       "tag": "0006_add_velora_clients_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792458100301,
+      "tag": "0007_velora_expenses",
+      "breakpoints": true
     }
   ]
 }
