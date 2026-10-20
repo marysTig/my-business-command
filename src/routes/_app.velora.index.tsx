@@ -4,7 +4,7 @@ import { CrudPage } from "@/components/crud-page";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatMoney, useRows } from "@/lib/db";
+import { formatDate, formatMoney, useRows } from "@/lib/db";
 import { VELORA_ORDER_STATUSES } from "@/lib/entities";
 
 export const Route = createFileRoute("/_app/velora/")({
@@ -57,76 +57,83 @@ function VeloraStats() {
 
 function VeloraPage() {
   const clients = useRows("velora_clients", {});
-
   const clientName = (id?: string) =>
     (clients.data ?? []).find((row) => row["id"] === id)?.["name"] ?? "—";
+  const money = (key: string) => (row: Record<string, any>) => formatMoney(row[key], row["currency"]);
+  const item = { key: "item", header: "Article" };
+  const client = { key: "client_id", header: "Client", render: (row: Record<string, any>) => clientName(row["client_id"]) };
+  const orderPage = (title: string, description: string, columns: any[], status = false) => (
+    <CrudPage
+      table="velora_orders"
+      title={title}
+      description={description}
+      detailPath="/velora/$id"
+      {...(status ? { statusField: "status", statusOptions: VELORA_ORDER_STATUSES } : {})}
+      columns={columns}
+    />
+  );
 
   return (
-    <Tabs defaultValue="orders" className="space-y-4">
-      <TabsList>
-        <TabsTrigger value="orders">Orders</TabsTrigger>
+    <Tabs defaultValue="commandes" className="space-y-4">
+      <TabsList className="flex h-auto flex-wrap">
         <TabsTrigger value="clients">Clients</TabsTrigger>
+        <TabsTrigger value="commandes">Commandes</TabsTrigger>
+        <TabsTrigger value="financement">Gestion financement</TabsTrigger>
+        <TabsTrigger value="vendu">Vendu avec prix</TabsTrigger>
+        <TabsTrigger value="depenses">Dépenses</TabsTrigger>
       </TabsList>
-
-      <TabsContent value="orders" className="space-y-6">
-        <VeloraStats />
-        <CrudPage
-          table="velora_orders"
-          title="Velora Orders"
-          description="What was sold, for how much, what it cost and how it is financed."
-          statusField="status"
-          statusOptions={VELORA_ORDER_STATUSES}
-          detailPath="/velora/$id"
-          columns={[
-            { key: "item", header: "Item" },
-            {
-              key: "client_id",
-              header: "Client",
-              render: (row) => clientName(row["client_id"]),
-            },
-            {
-              key: "sale_price",
-              header: "Sale price",
-              render: (row) => formatMoney(row["sale_price"], row["currency"]),
-            },
-            {
-              key: "expenses",
-              header: "Expenses",
-              render: (row) => formatMoney(row["expenses"], row["currency"]),
-            },
-            {
-              key: "profit",
-              header: "Profit",
-              render: (row) =>
-                formatMoney(Number(row["sale_price"] ?? 0) - Number(row["expenses"] ?? 0), row["currency"]),
-            },
-            {
-              key: "financing_status",
-              header: "Financing",
-              render: (row) => <StatusBadge value={row["financing_status"]} />,
-            },
-            {
-              key: "status",
-              header: "Status",
-              render: (row) => <StatusBadge value={row["status"]} />,
-            },
-          ]}
-        />
-      </TabsContent>
 
       <TabsContent value="clients">
         <CrudPage
           table="velora_clients"
-          title="Velora Clients"
-          description="Everyone who buys from Velora, with their contact details."
+          title="Clients"
+          description="Tous les clients Velora et leurs coordonnées."
           columns={[
             { key: "name", header: "Client" },
-            { key: "phone", header: "Phone" },
-            { key: "city", header: "City" },
-            { key: "address", header: "Address" },
+            { key: "phone", header: "Téléphone" },
+            { key: "city", header: "Ville" },
+            { key: "address", header: "Adresse" },
             { key: "email", header: "Email" },
           ]}
         />
+      </TabsContent>
+
+      <TabsContent value="commandes" className="space-y-6">
+        <VeloraStats />
+        {orderPage("Commandes", "Toutes les commandes et leur statut.", [
+          item, client,
+          { key: "order_date", header: "Date commande", render: (r: any) => formatDate(r["order_date"]) },
+          { key: "status", header: "Statut", render: (r: any) => <StatusBadge value={r["status"]} /> },
+        ], true)}
+      </TabsContent>
+
+      <TabsContent value="financement">
+        {orderPage("Gestion financement", "Apport, montant financé, mensualités et banque.", [
+          item, client,
+          { key: "deposit", header: "Apport", render: money("deposit") },
+          { key: "financed_amount", header: "Financé", render: money("financed_amount") },
+          { key: "monthly_payment", header: "Mensualité", render: money("monthly_payment") },
+          { key: "term_months", header: "Durée (mois)" },
+          { key: "financing_org", header: "Banque" },
+          { key: "financing_status", header: "Statut", render: (r: any) => <StatusBadge value={r["financing_status"]} /> },
+        ])}
+      </TabsContent>
+
+      <TabsContent value="vendu">
+        {orderPage("Vendu avec prix", "Ce qui a été vendu, quand et à quel prix.", [
+          item, client,
+          { key: "sold_at", header: "Date de vente", render: (r: any) => formatDate(r["sold_at"]) },
+          { key: "sale_price", header: "Prix de vente", render: money("sale_price") },
+          { key: "profit", header: "Bénéfice", render: (r: any) => formatMoney(Number(r["sale_price"] ?? 0) - Number(r["expenses"] ?? 0), r["currency"]) },
+        ])}
+      </TabsContent>
+
+      <TabsContent value="depenses">
+        {orderPage("Dépenses", "Les dépenses de chaque commande.", [
+          item, client,
+          { key: "expenses", header: "Dépenses", render: money("expenses") },
+          { key: "notes", header: "Notes" },
+        ])}
       </TabsContent>
     </Tabs>
   );
