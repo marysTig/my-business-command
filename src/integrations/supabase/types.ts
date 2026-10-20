@@ -790,6 +790,45 @@ export type Database = {
         }
         Relationships: []
       }
+      velora_expenses: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string
+          currency: string
+          expense_date: string | null
+          id: string
+          label: string
+          notes: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          currency?: string
+          expense_date?: string | null
+          id?: string
+          label: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          currency?: string
+          expense_date?: string | null
+          id?: string
+          label?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       velora_orders: {
         Row: {
           client_id: string | null
