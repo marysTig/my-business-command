@@ -751,6 +751,119 @@ export type Database = {
           },
         ]
       }
+      velora_clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      velora_orders: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          currency: string
+          deposit: number | null
+          expenses: number | null
+          financed_amount: number | null
+          financing_org: string | null
+          financing_status: string
+          id: string
+          item: string | null
+          monthly_payment: number | null
+          notes: string | null
+          order_date: string | null
+          sale_price: number | null
+          sold_at: string | null
+          status: string
+          term_months: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          deposit?: number | null
+          expenses?: number | null
+          financed_amount?: number | null
+          financing_org?: string | null
+          financing_status?: string
+          id?: string
+          item?: string | null
+          monthly_payment?: number | null
+          notes?: string | null
+          order_date?: string | null
+          sale_price?: number | null
+          sold_at?: string | null
+          status?: string
+          term_months?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          deposit?: number | null
+          expenses?: number | null
+          financed_amount?: number | null
+          financing_org?: string | null
+          financing_status?: string
+          id?: string
+          item?: string | null
+          monthly_payment?: number | null
+          notes?: string | null
+          order_date?: string | null
+          sale_price?: number | null
+          sold_at?: string | null
+          status?: string
+          term_months?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "velora_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "velora_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

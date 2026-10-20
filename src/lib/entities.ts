@@ -84,6 +84,25 @@ export const CAR_BUYER_STATUSES = [
   "Lost",
 ] as const;
 
+export const VELORA_ORDER_STATUSES = [
+  "New",
+  "Confirmed",
+  "In Financing",
+  "Ready",
+  "Delivered",
+  "Cancelled",
+] as const;
+
+export const VELORA_FINANCING_STATUSES = [
+  "None",
+  "Applying",
+  "Approved",
+  "Declined",
+  "Paid",
+] as const;
+
+export const VELORA_CURRENCIES = ["DZD", "EUR", "USD"] as const;
+
 export const PRODUCT_TYPES = [
   "File",
   "Subscription",
@@ -177,6 +196,44 @@ export const carBuyerFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
+export const veloraClientFields: Field[] = [
+  { name: "name", label: "Client name", type: "text", required: true },
+  { name: "phone", label: "Phone number", type: "text" },
+  { name: "email", label: "Email", type: "text" },
+  { name: "address", label: "Address", type: "text" },
+  { name: "city", label: "City", type: "text" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
+export const veloraOrderFields: Field[] = [
+  {
+    name: "client_id",
+    label: "Client",
+    type: "relation",
+    relation: "velora_clients",
+    required: true,
+  },
+  { name: "item", label: "Item / car sold", type: "text", required: true },
+  { name: "status", label: "Status", type: "select", options: VELORA_ORDER_STATUSES },
+  { name: "order_date", label: "Order date", type: "date" },
+  { name: "sold_at", label: "Date sold", type: "date" },
+  { name: "sale_price", label: "Sale price (prix de vente)", type: "number" },
+  { name: "expenses", label: "Expenses (dépenses)", type: "number" },
+  { name: "currency", label: "Currency", type: "select", options: VELORA_CURRENCIES },
+  { name: "deposit", label: "Deposit paid (apport)", type: "number" },
+  { name: "financed_amount", label: "Financed amount", type: "number" },
+  { name: "monthly_payment", label: "Monthly payment", type: "number" },
+  { name: "term_months", label: "Term (months)", type: "number" },
+  {
+    name: "financing_status",
+    label: "Financing status",
+    type: "select",
+    options: VELORA_FINANCING_STATUSES,
+  },
+  { name: "financing_org", label: "Bank / organism", type: "text" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
 export const productFields: Field[] = [
   { name: "product_name", label: "Product name", type: "text", required: true },
   { name: "description", label: "Description", type: "textarea" },
@@ -229,6 +286,8 @@ export const labelColumn: Record<string, string> = {
   client_websites: "project_name",
   saas_projects: "project_name",
   car_buyers: "name",
+  velora_clients: "name",
+  velora_orders: "item",
   digital_products: "product_name",
   customers: "name",
   resources: "name",
@@ -239,6 +298,8 @@ export const searchColumns: Record<string, string[]> = {
   client_websites: ["project_name", "client_name", "client_email", "domain", "description"],
   saas_projects: ["project_name", "description", "notes"],
   car_buyers: ["name", "phone", "address", "car_interest", "notes"],
+  velora_clients: ["name", "phone", "email", "address", "city", "notes"],
+  velora_orders: ["item", "financing_org", "notes", "status", "financing_status"],
   digital_products: ["product_name", "description", "notes"],
   customers: ["name", "email", "phone", "notes"],
   resources: ["name", "url", "category", "description", "notes"],
@@ -249,6 +310,8 @@ export const entityRoutes: Record<string, string> = {
   client_websites: "/websites",
   saas_projects: "/saas",
   car_buyers: "/cars",
+  velora_clients: "/velora",
+  velora_orders: "/velora",
   digital_products: "/products",
   customers: "/customers",
   resources: "/resources",
@@ -259,6 +322,8 @@ export const entityLabels: Record<string, string> = {
   client_websites: "Client Websites",
   saas_projects: "SaaS Projects",
   car_buyers: "Car Buyers",
+  velora_clients: "Velora Clients",
+  velora_orders: "Velora Orders",
   digital_products: "Digital Products",
   customers: "Customers",
   resources: "Resources",
@@ -269,6 +334,8 @@ export const entityFields: Record<string, Field[]> = {
   client_websites: websiteFields,
   saas_projects: saasFields,
   car_buyers: carBuyerFields,
+  velora_clients: veloraClientFields,
+  velora_orders: veloraOrderFields,
   digital_products: productFields,
   customers: customerFields,
   resources: resourceFields,

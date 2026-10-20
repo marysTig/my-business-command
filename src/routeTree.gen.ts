@@ -23,6 +23,8 @@ import { Route as AppProductsIndexRouteImport } from './routes/_app.products.ind
 import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
 import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
 import { Route as AppSaasIdRouteImport } from './routes/_app.saas.$id'
+import { Route as AppVeloraIndexRouteImport } from './routes/_app.velora.index'
+import { Route as AppVeloraIdRouteImport } from './routes/_app.velora.$id'
 import { Route as AppWebsitesIndexRouteImport } from './routes/_app.websites.index'
 import { Route as AppWebsitesIdRouteImport } from './routes/_app.websites.$id'
 
@@ -95,6 +97,16 @@ const AppSaasIdRoute = AppSaasIdRouteImport.update({
   path: '/saas/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVeloraIndexRoute = AppVeloraIndexRouteImport.update({
+  id: '/velora/',
+  path: '/velora/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVeloraIdRoute = AppVeloraIdRouteImport.update({
+  id: '/velora/$id',
+  path: '/velora/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWebsitesIndexRoute = AppWebsitesIndexRouteImport.update({
   id: '/websites/',
   path: '/websites/',
@@ -116,11 +128,13 @@ export interface FileRoutesByFullPath {
   '/customers/$id': typeof AppCustomersIdRoute
   '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
+  '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/cars/': typeof AppCarsIndexRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/products/': typeof AppProductsIndexRoute
   '/saas/': typeof AppSaasIndexRoute
+  '/velora/': typeof AppVeloraIndexRoute
   '/websites/': typeof AppWebsitesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -133,11 +147,13 @@ export interface FileRoutesByTo {
   '/customers/$id': typeof AppCustomersIdRoute
   '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
+  '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/cars': typeof AppCarsIndexRoute
   '/customers': typeof AppCustomersIndexRoute
   '/products': typeof AppProductsIndexRoute
   '/saas': typeof AppSaasIndexRoute
+  '/velora': typeof AppVeloraIndexRoute
   '/websites': typeof AppWebsitesIndexRoute
 }
 export interface FileRoutesById {
@@ -152,11 +168,13 @@ export interface FileRoutesById {
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/saas/$id': typeof AppSaasIdRoute
+  '/_app/velora/$id': typeof AppVeloraIdRoute
   '/_app/websites/$id': typeof AppWebsitesIdRoute
   '/_app/cars/': typeof AppCarsIndexRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/products/': typeof AppProductsIndexRoute
   '/_app/saas/': typeof AppSaasIndexRoute
+  '/_app/velora/': typeof AppVeloraIndexRoute
   '/_app/websites/': typeof AppWebsitesIndexRoute
 }
 export interface FileRouteTypes {
@@ -171,11 +189,13 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/products/$id'
     | '/saas/$id'
+    | '/velora/$id'
     | '/websites/$id'
     | '/cars/'
     | '/customers/'
     | '/products/'
     | '/saas/'
+    | '/velora/'
     | '/websites/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -188,11 +208,13 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/products/$id'
     | '/saas/$id'
+    | '/velora/$id'
     | '/websites/$id'
     | '/cars'
     | '/customers'
     | '/products'
     | '/saas'
+    | '/velora'
     | '/websites'
   id:
     | '__root__'
@@ -206,11 +228,13 @@ export interface FileRouteTypes {
     | '/_app/customers/$id'
     | '/_app/products/$id'
     | '/_app/saas/$id'
+    | '/_app/velora/$id'
     | '/_app/websites/$id'
     | '/_app/cars/'
     | '/_app/customers/'
     | '/_app/products/'
     | '/_app/saas/'
+    | '/_app/velora/'
     | '/_app/websites/'
   fileRoutesById: FileRoutesById
 }
@@ -319,6 +343,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSaasIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/velora/': {
+      id: '/_app/velora/'
+      path: '/velora'
+      fullPath: '/velora/'
+      preLoaderRoute: typeof AppVeloraIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/velora/$id': {
+      id: '/_app/velora/$id'
+      path: '/velora/$id'
+      fullPath: '/velora/$id'
+      preLoaderRoute: typeof AppVeloraIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/websites/': {
       id: '/_app/websites/'
       path: '/websites'
@@ -345,11 +383,13 @@ interface AppRouteChildren {
   AppCustomersIdRoute: typeof AppCustomersIdRoute
   AppProductsIdRoute: typeof AppProductsIdRoute
   AppSaasIdRoute: typeof AppSaasIdRoute
+  AppVeloraIdRoute: typeof AppVeloraIdRoute
   AppWebsitesIdRoute: typeof AppWebsitesIdRoute
   AppCarsIndexRoute: typeof AppCarsIndexRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppProductsIndexRoute: typeof AppProductsIndexRoute
   AppSaasIndexRoute: typeof AppSaasIndexRoute
+  AppVeloraIndexRoute: typeof AppVeloraIndexRoute
   AppWebsitesIndexRoute: typeof AppWebsitesIndexRoute
 }
 
@@ -362,11 +402,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppCustomersIdRoute: AppCustomersIdRoute,
   AppProductsIdRoute: AppProductsIdRoute,
   AppSaasIdRoute: AppSaasIdRoute,
+  AppVeloraIdRoute: AppVeloraIdRoute,
   AppWebsitesIdRoute: AppWebsitesIdRoute,
   AppCarsIndexRoute: AppCarsIndexRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppProductsIndexRoute: AppProductsIndexRoute,
   AppSaasIndexRoute: AppSaasIndexRoute,
+  AppVeloraIndexRoute: AppVeloraIndexRoute,
   AppWebsitesIndexRoute: AppWebsitesIndexRoute,
 }
 

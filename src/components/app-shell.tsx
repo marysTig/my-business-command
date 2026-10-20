@@ -4,6 +4,7 @@ import {
   Car,
   CheckSquare,
   Globe,
+  Gem,
   LayoutDashboard,
   Library,
   Menu,
@@ -28,6 +29,7 @@ const nav = [
   { to: "/products", label: "Digital Products", icon: Package },
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/resources", label: "Resources", icon: Library },
+  { to: "/velora", label: "Velora", icon: Gem },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

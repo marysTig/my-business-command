@@ -23,6 +23,8 @@ function SettingsPage() {
     "Client websites": useRows("client_websites", {}).data?.length ?? 0,
     "SaaS projects": useRows("saas_projects", {}).data?.length ?? 0,
     "Car buyers": useRows("car_buyers", {}).data?.length ?? 0,
+    "Velora clients": useRows("velora_clients", {}).data?.length ?? 0,
+    "Velora orders": useRows("velora_orders", {}).data?.length ?? 0,
     "Digital products": useRows("digital_products", {}).data?.length ?? 0,
     Customers: useRows("customers", {}).data?.length ?? 0,
     Tasks: useRows("tasks", {}).data?.length ?? 0,
