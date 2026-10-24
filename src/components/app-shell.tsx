@@ -19,6 +19,7 @@ import { QuickAdd } from "@/components/quick-add";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { setMember, useMember } from "@/lib/member";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -67,6 +68,7 @@ function Brand() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const member = useMember();
   const [term, setTerm] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -112,7 +114,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             />
           </form>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              title="Changer d'utilisateur"
+              onClick={() => setMember(null)}
+            >
+              <span className="flex size-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                {(member ?? "?").charAt(0).toUpperCase()}
+              </span>
+              <span className="hidden sm:inline">{member}</span>
+            </Button>
             <QuickAdd />
           </div>
         </header>

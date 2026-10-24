@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { getMember } from "@/lib/member";
 
 export type Row = Record<string, any>;
 
@@ -61,9 +62,10 @@ export function useSaveRow(table: string) {
         if (error) throw error;
         return data as Row;
       }
-      const { data: userData } = await supabase.auth.getUser();
+      const member = getMember();
+      const payload = table === "team_members" ? rest : { ...rest, created_by: member };
       const { data, error } = await (supabase.from(table as never) as any)
-        .insert({ ...rest, user_id: userData.user?.id })
+        .insert(payload)
         .select()
         .single();
       if (error) throw error;
