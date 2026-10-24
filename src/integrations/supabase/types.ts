@@ -19,6 +19,7 @@ export type Database = {
           address: string | null
           car_interest: string | null
           created_at: string
+          created_by: string | null
           id: string
           name: string
           notes: string | null
@@ -32,6 +33,7 @@ export type Database = {
           address?: string | null
           car_interest?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -45,6 +47,7 @@ export type Database = {
           address?: string | null
           car_interest?: string | null
           created_at?: string
+          created_by?: string | null
           id?: string
           name?: string
           notes?: string | null
@@ -64,6 +67,7 @@ export type Database = {
           client_password: string | null
           client_phone: string | null
           created_at: string
+          created_by: string | null
           deadline: string | null
           description: string | null
           domain: string | null
@@ -88,6 +92,7 @@ export type Database = {
           client_password?: string | null
           client_phone?: string | null
           created_at?: string
+          created_by?: string | null
           deadline?: string | null
           description?: string | null
           domain?: string | null
@@ -112,6 +117,7 @@ export type Database = {
           client_password?: string | null
           client_phone?: string | null
           created_at?: string
+          created_by?: string | null
           deadline?: string | null
           description?: string | null
           domain?: string | null
@@ -136,6 +142,7 @@ export type Database = {
           access_status: string
           amount: number | null
           created_at: string
+          created_by: string | null
           email: string | null
           expiration_date: string | null
           id: string
@@ -153,6 +160,7 @@ export type Database = {
           access_status?: string
           amount?: number | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           expiration_date?: string | null
           id?: string
@@ -170,6 +178,7 @@ export type Database = {
           access_status?: string
           amount?: number | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           expiration_date?: string | null
           id?: string
@@ -196,6 +205,7 @@ export type Database = {
       digital_products: {
         Row: {
           created_at: string
+          created_by: string | null
           currency: string
           description: string | null
           google_drive_url: string | null
@@ -211,6 +221,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           currency?: string
           description?: string | null
           google_drive_url?: string | null
@@ -226,6 +237,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           currency?: string
           description?: string | null
           google_drive_url?: string | null
@@ -473,6 +485,7 @@ export type Database = {
           category: string
           client_website_id: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           digital_product_id: string | null
           id: string
@@ -489,6 +502,7 @@ export type Database = {
           category?: string
           client_website_id?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           digital_product_id?: string | null
           id?: string
@@ -505,6 +519,7 @@ export type Database = {
           category?: string
           client_website_id?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           digital_product_id?: string | null
           id?: string
@@ -553,6 +568,7 @@ export type Database = {
           access_password: string | null
           contact_email: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           id: string
           notes: string | null
@@ -571,6 +587,7 @@ export type Database = {
           access_password?: string | null
           contact_email?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           notes?: string | null
@@ -589,6 +606,7 @@ export type Database = {
           access_password?: string | null
           contact_email?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           notes?: string | null
@@ -609,6 +627,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          created_by: string | null
           currency: string
           customer_id: string | null
           id: string
@@ -624,6 +643,7 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          created_by?: string | null
           currency?: string
           customer_id?: string | null
           id?: string
@@ -639,6 +659,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          created_by?: string | null
           currency?: string
           customer_id?: string | null
           id?: string
@@ -673,6 +694,7 @@ export type Database = {
           category: string | null
           client_website_id: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           digital_product_id: string | null
           due_date: string | null
@@ -690,6 +712,7 @@ export type Database = {
           category?: string | null
           client_website_id?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           digital_product_id?: string | null
           due_date?: string | null
@@ -707,6 +730,7 @@ export type Database = {
           category?: string | null
           client_website_id?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           digital_product_id?: string | null
           due_date?: string | null
@@ -751,11 +775,30 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       velora_clients: {
         Row: {
           address: string | null
           city: string | null
           created_at: string
+          created_by: string | null
           email: string | null
           id: string
           name: string
@@ -768,6 +811,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name: string
@@ -780,6 +824,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          created_by?: string | null
           email?: string | null
           id?: string
           name?: string
@@ -795,6 +840,7 @@ export type Database = {
           amount: number | null
           category: string | null
           created_at: string
+          created_by: string | null
           currency: string
           expense_date: string | null
           id: string
@@ -807,6 +853,7 @@ export type Database = {
           amount?: number | null
           category?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           expense_date?: string | null
           id?: string
@@ -819,6 +866,7 @@ export type Database = {
           amount?: number | null
           category?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           expense_date?: string | null
           id?: string
@@ -833,6 +881,7 @@ export type Database = {
         Row: {
           client_id: string | null
           created_at: string
+          created_by: string | null
           currency: string
           deposit: number | null
           expenses: number | null
@@ -854,6 +903,7 @@ export type Database = {
         Insert: {
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deposit?: number | null
           expenses?: number | null
@@ -875,6 +925,7 @@ export type Database = {
         Update: {
           client_id?: string | null
           created_at?: string
+          created_by?: string | null
           currency?: string
           deposit?: number | null
           expenses?: number | null
