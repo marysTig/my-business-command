@@ -10,7 +10,7 @@
 - New "Velora" section in the sidebar, above Settings: Clients and Orders tabs, with sale price, expenses, profit, deposit, and financing (amount, monthly, term, bank, status). Verified in the browser: added a client, added an order linked to it, opened its page, then removed both.
 
 ## Open
-- None.
+- Verify task Kanban drag-and-drop saves the new status and persists after reload.
 
 ## Notes
 - App has no sign-in; anyone with the link can read stored values. Password fields are stored as plain text — the user was warned once and asked for the field anyway.

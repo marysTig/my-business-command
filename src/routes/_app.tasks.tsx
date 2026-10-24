@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { DndContext, DragOverlay, KeyboardSensor, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { GripVertical, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -43,18 +45,27 @@ function TaskCard({
   onEdit,
   onDelete,
   onStatus,
+  disabled,
 }: {
   task: Row;
   onEdit: () => void;
   onDelete: () => void;
   onStatus: (status: string) => void;
+  disabled: boolean;
 }) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging } = useDraggable({
+    id: task["id"],
+    disabled,
+  });
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div ref={setNodeRef} className={`min-w-0 rounded-lg border border-border bg-card p-3 ${isDragging ? "opacity-30" : ""}`}>
       <div className="flex items-start justify-between gap-2">
-        <button className="text-left text-sm font-medium hover:underline" onClick={onEdit}>
+        <Button ref={setActivatorNodeRef} variant="ghost" size="icon" className="size-7 shrink-0 touch-none cursor-grab active:cursor-grabbing" aria-label={`Drag ${task["title"]}`} title="Drag task" disabled={disabled} {...attributes} {...listeners}>
+          <GripVertical className="size-4" />
+        </Button>
+        <Button variant="link" className="h-auto min-w-0 flex-1 justify-start whitespace-normal p-0 text-left text-sm font-medium" onClick={onEdit}>
           {task["title"]}
-        </button>
+        </Button>
         <StatusBadge value={task["priority"]} />
       </div>
       {task["description"] ? (
@@ -63,7 +74,7 @@ function TaskCard({
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{formatDate(task["due_date"])}</span>
         <div className="flex items-center gap-1">
-          <Select value={task["status"]} onValueChange={onStatus}>
+          <Select value={task["status"]} onValueChange={onStatus} disabled={disabled}>
             <SelectTrigger className="h-7 w-32 text-xs">
               <SelectValue />
             </SelectTrigger>
@@ -84,7 +95,21 @@ function TaskCard({
   );
 }
 
+function TaskColumn({ status, count, children }: { status: string; count: number; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+  return (
+    <div ref={setNodeRef} aria-label={`${status} column`} className={`min-h-48 min-w-0 rounded-lg bg-muted/50 p-3 transition-colors ${isOver ? "bg-accent ring-2 ring-primary" : ""}`}>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-semibold">{status}</p>
+        <span className="text-xs text-muted-foreground">{count}</span>
+      </div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
 function TasksPage() {
+  const queryClient = useQueryClient();
   const { data = [], isLoading } = useRows("tasks", {});
   const save = useSaveRow("tasks");
   const del = useDeleteRow("tasks");
@@ -94,10 +119,38 @@ function TasksPage() {
   const [editing, setEditing] = useState<Row | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
+  const [activeTask, setActiveTask] = useState<Row | null>(null);
+  const [moving, setMoving] = useState<{ id: string; status: string } | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  async function moveTask(id: string, nextStatus: string) {
+    const task = data.find((row) => row["id"] === id);
+    if (!task || task["status"] === nextStatus || moving) return;
+    setMoving({ id, status: nextStatus });
+    try {
+      const saved = await save.mutateAsync({ id, status: nextStatus });
+      queryClient.setQueriesData<Row[]>({ queryKey: ["tasks"] }, (old) =>
+        old?.map((row) => row["id"] === id ? { ...row, ...saved } : row),
+      );
+    } catch {
+      // The save hook displays the error; clearing the preview restores the original column.
+    } finally {
+      setMoving(null);
+    }
+  }
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    setActiveTask(null);
+    if (!over || !TASK_BOARD_STATUSES.some((status) => status === over.id)) return;
+    void moveTask(String(active.id), String(over.id));
+  }
 
   const rows = useMemo(() => {
     const q = term.trim().toLowerCase();
-    return data.filter((t) => {
+    return data.map((t) => moving?.id === t["id"] ? { ...t, status: moving.status } : t).filter((t) => {
       if (status !== "all" && t["status"] !== status) return false;
       if (priority !== "all" && t["priority"] !== priority) return false;
       if (!q) return true;
@@ -105,7 +158,7 @@ function TasksPage() {
         String(t[c] ?? "").toLowerCase().includes(q),
       );
     });
-  }, [data, term, status, priority]);
+  }, [data, term, status, priority, moving]);
 
   function openNew() {
     setEditing(null);
@@ -211,16 +264,10 @@ function TasksPage() {
           </TabsContent>
 
           <TabsContent value="board" className="mt-4">
+            <DndContext sensors={sensors} onDragStart={({ active }) => setActiveTask(rows.find((task) => task["id"] === active.id) ?? null)} onDragCancel={() => setActiveTask(null)} onDragEnd={onDragEnd}>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {TASK_BOARD_STATUSES.map((column) => (
-                <div key={column} className="rounded-xl bg-muted/50 p-3">
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-sm font-semibold">{column}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {rows.filter((t) => t["status"] === column).length}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
+                <TaskColumn key={column} status={column} count={rows.filter((t) => t["status"] === column).length}>
                     {rows
                       .filter((t) => t["status"] === column)
                       .map((task) => (
@@ -232,13 +279,17 @@ function TasksPage() {
                             setFormOpen(true);
                           }}
                           onDelete={() => setDeleting(task)}
-                          onStatus={(s) => save.mutate({ id: task["id"], status: s })}
+                          onStatus={(s) => void moveTask(task["id"], s)}
+                          disabled={moving !== null}
                         />
                       ))}
-                  </div>
-                </div>
+                </TaskColumn>
               ))}
             </div>
+            <DragOverlay>
+              {activeTask ? <div className="rounded-lg border border-primary bg-card p-3 shadow-lg"><p className="break-words text-sm font-medium">{activeTask["title"]}</p><StatusBadge value={activeTask["priority"]} /></div> : null}
+            </DragOverlay>
+            </DndContext>
           </TabsContent>
         </Tabs>
       )}
