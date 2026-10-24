@@ -57,6 +57,13 @@
       "when": 1792458100301,
       "tag": "0007_velora_expenses",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792856270072,
+      "tag": "0008_team_members_created_by",
+      "breakpoints": true
     }
   ]
 }
