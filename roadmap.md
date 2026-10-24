@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Done
+- Task Kanban drag handles: moving between columns saves status; verified persistence after reload and removed the test task.
 - SaaS Projects form: Vercel URL, email and password fields added and verified in the browser.
 - Client Websites form: client password field added and verified in the browser.
 - SaaS project page shows Vercel link, email and a hidden password with show/copy buttons.
