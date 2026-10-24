@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Done
+- Task Kanban drag handles: moving between columns saves status; verified persistence after reload and removed the test task.
 - SaaS Projects form: Vercel URL, email and password fields added and verified in the browser.
 - Client Websites form: client password field added and verified in the browser.
 - SaaS project page shows Vercel link, email and a hidden password with show/copy buttons.
@@ -10,7 +11,7 @@
 - New "Velora" section in the sidebar, above Settings: Clients and Orders tabs, with sale price, expenses, profit, deposit, and financing (amount, monthly, term, bank, status). Verified in the browser: added a client, added an order linked to it, opened its page, then removed both.
 
 ## Open
-- Verify task Kanban drag-and-drop saves the new status and persists after reload.
+- None.
 
 ## Notes
 - App has no sign-in; anyone with the link can read stored values. Password fields are stored as plain text — the user was warned once and asked for the field anyway.

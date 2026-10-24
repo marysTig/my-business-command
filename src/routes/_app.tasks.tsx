@@ -150,7 +150,7 @@ function TasksPage() {
 
   const rows = useMemo(() => {
     const q = term.trim().toLowerCase();
-    return data.map((t) => moving?.id === t["id"] ? { ...t, status: moving.status } : t).filter((t) => {
+    return data.map((t) => moving && moving.id === t["id"] ? { ...t, status: moving.status } : t).filter((t) => {
       if (status !== "all" && t["status"] !== status) return false;
       if (priority !== "all" && t["priority"] !== priority) return false;
       if (!q) return true;
