@@ -149,6 +149,7 @@ export function CrudPage({
                     {c.header}
                   </TableHead>
                 ))}
+                <TableHead className="hidden md:table-cell">Ajouté par</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -172,6 +173,9 @@ export function CrudPage({
                       )}
                     </TableCell>
                   ))}
+                  <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
+                    {row["created_by"] ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
