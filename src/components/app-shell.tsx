@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
+import { AiChat } from "@/components/ai-chat";
 import { QuickAdd } from "@/components/quick-add";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,6 +134,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <main className="mx-auto w-full max-w-7xl space-y-6 p-4 lg:p-6">{children}</main>
       </div>
+
+      <AiChat />
     </div>
   );
 }
