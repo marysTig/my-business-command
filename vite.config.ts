@@ -12,4 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // Dev-only: allow Cloudflare quick-tunnel hostnames so an external bot can
+      // reach /api/* through a tunnel. Does not affect production builds.
+      allowedHosts: [".trycloudflare.com"],
+    },
+  },
 });

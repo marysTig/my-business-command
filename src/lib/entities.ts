@@ -243,6 +243,29 @@ export const veloraExpenseFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
+export const EXPENSE_CATEGORIES = [
+  "Alimentation",
+  "Transport",
+  "Logement",
+  "Factures",
+  "Santé",
+  "Famille",
+  "Restaurant",
+  "Loisirs",
+  "Shopping",
+  "Éducation",
+  "Autre",
+] as const;
+
+export const personalExpenseFields: Field[] = [
+  { name: "label", label: "Dépense", type: "text", required: true },
+  { name: "amount", label: "Montant", type: "number", required: true },
+  { name: "currency", label: "Devise", type: "select", options: VELORA_CURRENCIES },
+  { name: "category", label: "Catégorie", type: "select", options: EXPENSE_CATEGORIES },
+  { name: "expense_date", label: "Date", type: "date" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
 export const productFields: Field[] = [
   { name: "product_name", label: "Product name", type: "text", required: true },
   { name: "description", label: "Description", type: "textarea" },
@@ -298,6 +321,7 @@ export const labelColumn: Record<string, string> = {
   velora_clients: "name",
   velora_orders: "item",
   velora_expenses: "label",
+  personal_expenses: "label",
   digital_products: "product_name",
   customers: "name",
   resources: "name",
@@ -310,6 +334,7 @@ export const searchColumns: Record<string, string[]> = {
   car_buyers: ["name", "phone", "address", "car_interest", "notes"],
   velora_clients: ["name", "phone", "email", "address", "city", "notes"],
   velora_expenses: ["label", "category", "notes"],
+  personal_expenses: ["label", "category", "notes"],
   velora_orders: ["item", "financing_org", "notes", "status", "financing_status"],
   digital_products: ["product_name", "description", "notes"],
   customers: ["name", "email", "phone", "notes"],
@@ -324,6 +349,7 @@ export const entityRoutes: Record<string, string> = {
   velora_clients: "/velora",
   velora_orders: "/velora",
   velora_expenses: "/velora",
+  personal_expenses: "/expenses",
   digital_products: "/products",
   customers: "/customers",
   resources: "/resources",
@@ -336,6 +362,7 @@ export const entityLabels: Record<string, string> = {
   car_buyers: "Car Buyers",
   velora_clients: "Velora Clients",
   velora_orders: "Velora Orders",
+  personal_expenses: "Dépenses",
   digital_products: "Digital Products",
   customers: "Customers",
   resources: "Resources",
@@ -349,6 +376,7 @@ export const entityFields: Record<string, Field[]> = {
   velora_clients: veloraClientFields,
   velora_orders: veloraOrderFields,
   velora_expenses: veloraExpenseFields,
+  personal_expenses: personalExpenseFields,
   digital_products: productFields,
   customers: customerFields,
   resources: resourceFields,

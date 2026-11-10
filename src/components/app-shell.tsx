@@ -12,6 +12,7 @@ import {
   Search,
   Settings,
   Users,
+  Wallet,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
@@ -32,6 +33,7 @@ const nav = [
   { to: "/customers", label: "Customers", icon: Users },
   { to: "/resources", label: "Resources", icon: Library },
   { to: "/velora", label: "Velora", icon: Gem },
+  { to: "/expenses", label: "Dépenses", icon: Wallet },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

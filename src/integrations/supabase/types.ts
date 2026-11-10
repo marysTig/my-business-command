@@ -301,6 +301,48 @@ export type Database = {
         }
         Relationships: []
       }
+      personal_expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          expense_date: string
+          id: string
+          label: string
+          notes: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          expense_date?: string
+          id?: string
+          label: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          expense_date?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

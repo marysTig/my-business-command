@@ -9,6 +9,8 @@
 //   ZAI_API_KEY_2    second key slot (optional)
 //   ZAI_API_BASE     default https://api.z.ai/api/paas/v4
 //   ZAI_MODEL        default glm-4.6
+//   ZAI_MODEL_FALLBACK  comma-separated extra models tried when one is out of
+//                       quota (429) — each Gemini model has its own daily limit
 // Per-slot overrides ZAI_API_BASE_2 / ZAI_MODEL_2 let the second key point at
 // another OpenAI-compatible endpoint if it is not Z.ai.
 
@@ -28,9 +30,15 @@ function env(name: string): string | undefined {
   return fromMeta || undefined;
 }
 
+// Every (key, model) pair is its own target: a model out of daily quota is
+// retried later while its sibling models on the same key keep answering.
 function readSlots(): Slot[] {
   const base = env("ZAI_API_BASE") ?? "https://api.z.ai/api/paas/v4";
   const model = env("ZAI_MODEL") ?? "glm-4.6";
+  const fallbacks = (env("ZAI_MODEL_FALLBACK") ?? "")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
   const slots: Slot[] = [];
   const first = env("ZAI_API_KEY");
   if (first) slots.push({ id: "key-1", base, key: first, model });
@@ -48,7 +56,10 @@ function readSlots(): Slot[] {
       "No AI API key configured. Set ZAI_API_KEY (and optionally ZAI_API_KEY_2) server-side.",
     );
   }
-  return slots;
+  return slots.flatMap((slot) => {
+    const models = [...new Set([slot.model, ...fallbacks])];
+    return models.map((m) => ({ ...slot, id: `${slot.id}:${m}`, model: m }));
+  });
 }
 
 // Round-robin cursor + per-key cooldown (in-memory; fine for a single
@@ -84,9 +95,11 @@ export async function chatCompletions(payload: Record<string, unknown>) {
           Authorization: `Bearer ${slot.key}`,
         },
         body: JSON.stringify({ ...payload, model: slot.model }),
+        // A stalled upstream must fail over, not hang the bot forever.
+        signal: AbortSignal.timeout(45_000),
       });
     } catch {
-      // Network-level failure: try the next key.
+      // Network-level failure or timeout: try the next key/model.
       coolDown(slot, 502);
       continue;
     }

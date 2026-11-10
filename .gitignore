@@ -33,3 +33,9 @@ dist-ssr
 
 # API key copy for the owner (never commit)
 .dashboard-api-key.txt
+
+# generated migration helpers (contain copied data)
+supabase/new-project/
+
+# local tunnel binary
+.tools/

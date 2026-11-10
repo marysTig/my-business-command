@@ -22,9 +22,11 @@ const SEARCH_TABLES: TableName[] = [
   "velora_clients",
   "velora_orders",
   "velora_expenses",
+  "personal_expenses",
   "leads",
 ];
 const TEXT_COLUMNS = ["name", "title", "label", "project_name", "item", "email", "notes"];
+const MONEY_COLUMNS = ["amount", "price", "sale_price", "amount_paid", "project_amount", "budget"];
 
 // Uses the same publishable (anon) key as the browser app. The database has
 // open access (migration 0001_open_access_no_auth), so reads/writes work
@@ -119,6 +121,62 @@ function filterDef() {
   } as const;
 }
 
+// Columns the assistant must never overwrite by hand.
+const PROTECTED_COLUMNS = ["id", "created_at", "user_id"];
+
+/**
+ * Column/value pairs for an insert or update. Accepts an object
+ * ({"price": 10}) or the array-of-pairs form the model is given
+ * ([{column: "price", value: 10}]), and rejects unknown columns so a typo
+ * can never write to the wrong field.
+ */
+function parseValues(table: TableName, raw: unknown): Record<string, unknown> {
+  const entries: Array<[string, unknown]> = [];
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const pair = item as { column?: unknown; value?: unknown };
+      if (typeof pair?.column !== "string") throw new Error("Each value needs a column name.");
+      entries.push([pair.column, pair.value]);
+    }
+  } else if (raw && typeof raw === "object") {
+    for (const [column, value] of Object.entries(raw as Record<string, unknown>)) {
+      entries.push([column, value]);
+    }
+  } else {
+    throw new Error("values must list the columns to write.");
+  }
+  if (entries.length === 0) throw new Error("values must contain at least one column.");
+
+  const out: Record<string, unknown> = {};
+  for (const [column, value] of entries) {
+    if (!isValidColumn(table, column)) {
+      throw new Error(
+        `Invalid column "${column}" for table "${table}". Valid columns: ${TABLE_COLUMNS[table].join(", ")}.`,
+      );
+    }
+    if (PROTECTED_COLUMNS.includes(column)) {
+      throw new Error(`Column "${column}" cannot be set by the assistant.`);
+    }
+    out[column] = value;
+  }
+  return out;
+}
+
+function valuesDef(description: string) {
+  return {
+    type: "array",
+    description,
+    items: {
+      type: "object",
+      properties: {
+        column: { type: "string" },
+        value: { type: ["string", "number", "boolean", "array", "null"] },
+      },
+      required: ["column", "value"],
+    },
+  } as const;
+}
+
 export const tools: ToolDef[] = [
   {
     type: "function",
@@ -202,7 +260,7 @@ export const tools: ToolDef[] = [
     function: {
       name: "create_task",
       description:
-        "Create a new task in the Tasks module. The ONLY write allowed is creating tasks. Columns title (required), description, priority (Low|Medium|High|Urgent), due_date (YYYY-MM-DD), and optional links: saas_project_id, client_website_id, digital_product_id, property_id. New tasks always enter at status To Do.",
+        "Create a new task in the Tasks module. Columns title (required), description, priority (Low|Medium|High|Urgent), due_date (YYYY-MM-DD), and optional links: saas_project_id, client_website_id, digital_product_id, property_id. New tasks always enter at status To Do. For other tables use create_record.",
       parameters: {
         type: "object",
         properties: {
@@ -224,7 +282,7 @@ export const tools: ToolDef[] = [
     function: {
       name: "update_task_status",
       description:
-        "Change a task's status to one of: To Do, In Progress, Waiting, Done. Use task_id (preferred, from a query or search) or fall back to title for exact-title match. This is the ONLY update allowed.",
+        "Change a task's status to one of: To Do, In Progress, Waiting, Done. Use task_id (preferred, from a query or search) or fall back to title for exact-title match. For editing any other field or table use update_record.",
       parameters: {
         type: "object",
         properties: {
@@ -233,6 +291,72 @@ export const tools: ToolDef[] = [
           status: { type: "string", enum: ["To Do", "In Progress", "Waiting", "Done"] },
         },
         required: ["status"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "describe_table",
+      description:
+        "List every column you may read or write on a table, plus its row count and one sample row. Call this before creating or editing a record in a table you have not touched yet, so you use real column names and value formats.",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: TABLE_NAMES },
+        },
+        required: ["table"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_record",
+      description:
+        "Create a record in ANY dashboard table (customers, sales, car_buyers, saas_projects, client_websites, digital_products, resources, leads, properties, velora_clients, velora_orders, velora_expenses, tasks, ...). Send only columns that exist on that table (use describe_table). Numbers must be sent as numbers (price 2500, not \"2500\"); dates as YYYY-MM-DD or ISO. Returns the created row.",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: TABLE_NAMES },
+          values: valuesDef("Columns to insert, e.g. name + price for a product."),
+        },
+        required: ["table", "values"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_record",
+      description:
+        "Edit an existing record in ANY dashboard table: change status, price, dates, notes, contact details, progress, anything. Target one row with id (preferred — get it from query_table/search) or a set of filters; it refuses to run with neither. Returns how many rows changed and their new values.",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: TABLE_NAMES },
+          id: { type: "string", description: "Row id — preferred way to target one record." },
+          filters: filterDef(),
+          values: valuesDef("Columns to change and their new values."),
+        },
+        required: ["table", "values"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "delete_record",
+      description:
+        "Permanently delete ONE record from any dashboard table by id. Call it only after the user clearly asked to delete that specific record, and always pass confirm=true. To clear many rows, delete them one by one and tell the user what you removed.",
+      parameters: {
+        type: "object",
+        properties: {
+          table: { type: "string", enum: TABLE_NAMES },
+          id: { type: "string" },
+          confirm: { type: "boolean", description: "Must be true — confirms the deletion is intended." },
+        },
+        required: ["table", "id", "confirm"],
       },
     },
   },
@@ -284,7 +408,9 @@ export async function executeTool(
     const table = args["table"] as TableName;
 
     const selectList = typeof args["select"] === "string" ? (args["select"] as string).split(",") : null;
-    let select = "*";
+    // Never select("*"): the registry excludes credential columns, so building
+    // the list from it keeps passwords out of every AI response.
+    let select = TABLE_COLUMNS[table].join(",");
     if (selectList && selectList.length > 0) {
       for (const col of selectList) {
         if (!isValidColumn(table, col.trim())) throw new Error(`Invalid column "${col.trim()}" for table "${table}".`);
@@ -341,9 +467,7 @@ export async function executeTool(
       }
       if (seen) out[`by_${col}`] = groups;
     }
-    const moneyColumns = (["amount", "price", "sale_price", "amount_paid", "project_amount", "budget"] as const).filter(
-      (c) => isValidColumn(table, c),
-    );
+    const moneyColumns = MONEY_COLUMNS.filter((c) => isValidColumn(table, c));
     const sums: Record<string, number> = {};
     for (const col of moneyColumns) {
       let sum = 0;
@@ -410,6 +534,73 @@ export async function executeTool(
       .single();
     if (error) throw error;
     return data;
+  }
+
+  if (name === "describe_table") {
+    if (!isValidTable(args["table"])) throw new Error(`Invalid table "${String(args["table"])}".`);
+    const table = args["table"] as TableName;
+    const columns = TABLE_COLUMNS[table].join(",");
+    const { data, error, count } = await supabase
+      .from(table)
+      .select(columns, { count: "exact" })
+      .limit(1);
+    if (error) throw error;
+    return {
+      table,
+      columns: TABLE_COLUMNS[table],
+      rows: count ?? 0,
+      sample: (data as unknown[] | null)?.[0] ?? null,
+      writable: TABLE_COLUMNS[table].filter((c) => !PROTECTED_COLUMNS.includes(c)),
+    };
+  }
+
+  if (name === "create_record") {
+    if (!isValidTable(args["table"])) throw new Error(`Invalid table "${String(args["table"])}".`);
+    const table = args["table"] as TableName;
+    const values = parseValues(table, args["values"]);
+    if (isValidColumn(table, "created_by") && values["created_by"] === undefined) {
+      values["created_by"] = "AI Assistant";
+    }
+    const { data, error } = await supabase.from(table).insert(values).select().single();
+    if (error) throw error;
+    return { created: true, table, row: data };
+  }
+
+  if (name === "update_record") {
+    if (!isValidTable(args["table"])) throw new Error(`Invalid table "${String(args["table"])}".`);
+    const table = args["table"] as TableName;
+    const values = parseValues(table, args["values"]);
+    const id = args["id"] ? String(args["id"]) : null;
+    const filters = parseFilters(table, args["filters"]);
+    if (!id && filters.length === 0) {
+      throw new Error(
+        "Refusing to update: pass id (preferred) or at least one filter so the whole table cannot be overwritten by accident.",
+      );
+    }
+    if (isValidColumn(table, "updated_at")) values["updated_at"] = new Date().toISOString();
+
+    let query = supabase.from(table).update(values);
+    query = id ? query.eq("id", id) : applyFilters(query, filters);
+    const { data, error } = await query.select();
+    if (error) throw error;
+    const rows = (data ?? []) as unknown[];
+    if (rows.length === 0) throw new Error(`No row matched in "${table}", so nothing was updated.`);
+    return { updated: rows.length, table, rows };
+  }
+
+  if (name === "delete_record") {
+    if (!isValidTable(args["table"])) throw new Error(`Invalid table "${String(args["table"])}".`);
+    const table = args["table"] as TableName;
+    const id = String(args["id"] ?? "").trim();
+    if (!id) throw new Error("id is required to delete a record.");
+    if (args["confirm"] !== true) {
+      throw new Error("Refusing to delete: pass confirm=true once the user has agreed to remove this record.");
+    }
+    const { data, error } = await supabase.from(table).delete().eq("id", id).select();
+    if (error) throw error;
+    const rows = (data ?? []) as unknown[];
+    if (rows.length === 0) throw new Error(`No row with id ${id} in "${table}".`);
+    return { deleted: rows.length, table, row: rows[0] };
   }
 
   throw new Error(`Unknown tool: ${name}`);

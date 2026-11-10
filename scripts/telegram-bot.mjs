@@ -222,7 +222,13 @@ async function handleMessage(msg) {
   } catch (err) {
     stopTyping = true;
     console.error(`[${chatId}] ${err.message}`);
-    await sendReply(chatId, "Sorry, something went wrong. Try again in a moment.").catch(() => {});
+    const quota = /429/.test(err.message);
+    await sendReply(
+      chatId,
+      quota
+        ? "⚠️ The AI has used up its free daily quota. It resets around midnight Pacific time — or enable billing on the Google AI Studio key for unlimited use."
+        : "Sorry, something went wrong. Try again in a moment.",
+    ).catch(() => {});
   }
 }
 
