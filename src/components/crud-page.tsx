@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { EmptyState } from "@/components/empty-state";
+import { SectionResearch } from "@/components/section-research";
 import { EntityFormDialog } from "@/components/entity-form";
 import { LoadingRows } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
@@ -53,6 +54,7 @@ export function CrudPage({
   detailPath?: string;
   toolbar?: ReactNode;
   emptyTitle?: string;
+  researchSection?: string;
 }) {
   const { data = [], isLoading } = useRows(table, {});
   const del = useDeleteRow(table);
@@ -222,6 +224,8 @@ export function CrudPage({
         record={editing}
         title={editing ? `Edit ${title}` : `New ${title}`}
       />
+
+      {researchSection ? <SectionResearch section={researchSection} /> : null}
 
       <ConfirmDelete
         open={Boolean(deleting)}

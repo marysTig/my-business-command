@@ -522,6 +522,51 @@ export type Database = {
           },
         ]
       }
+      research_reports: {
+        Row: {
+          actions: Json | null
+          applied_at: string | null
+          created_at: string
+          created_by: string | null
+          findings: string | null
+          id: string
+          question: string
+          section: string
+          sources: Json | null
+          summary: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          actions?: Json | null
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          findings?: string | null
+          id?: string
+          question: string
+          section: string
+          sources?: Json | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          actions?: Json | null
+          applied_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          findings?: string | null
+          id?: string
+          question?: string
+          section?: string
+          sources?: Json | null
+          summary?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       resources: {
         Row: {
           category: string

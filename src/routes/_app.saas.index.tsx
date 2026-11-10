@@ -27,6 +27,7 @@ function SaasPage() {
   return (
     <CrudPage
       table="saas_projects"
+      researchSection="saas"
       title="SaaS Projects"
       description="Your own products, from idea to launch."
       statusField="status"

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDate, formatMoney, useDeleteRow, useRows, useSaveRow, type Row } from "@/lib/db";
+import { SectionResearch } from "@/components/section-research";
 import { EXPENSE_CATEGORIES, VELORA_CURRENCIES } from "@/lib/entities";
 
 export const Route = createFileRoute("/_app/expenses")({
@@ -340,6 +341,8 @@ function ExpensesPage() {
           setDeleting(null);
         }}
       />
+
+      <SectionResearch section="expenses" />
     </>
   );
 }

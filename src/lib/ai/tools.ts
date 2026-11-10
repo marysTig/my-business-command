@@ -23,6 +23,7 @@ const SEARCH_TABLES: TableName[] = [
   "velora_orders",
   "velora_expenses",
   "personal_expenses",
+  "research_reports",
   "leads",
 ];
 const TEXT_COLUMNS = ["name", "title", "label", "project_name", "item", "email", "notes"];

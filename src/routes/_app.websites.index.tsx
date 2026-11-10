@@ -27,6 +27,7 @@ function WebsitesPage() {
   return (
     <CrudPage
       table="client_websites"
+      researchSection="websites"
       title="Client Websites"
       description="Client projects with contacts, progress and links."
       statusField="status"

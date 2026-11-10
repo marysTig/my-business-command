@@ -65,6 +65,7 @@ function VeloraPage() {
   const orderPage = (title: string, description: string, columns: any[], status = false) => (
     <CrudPage
       table="velora_orders"
+              researchSection="velora"
       title={title}
       description={description}
       detailPath="/velora/$id"
@@ -86,6 +87,7 @@ function VeloraPage() {
       <TabsContent value="clients">
         <CrudPage
           table="velora_clients"
+              researchSection="velora"
           title="Clients"
           description="Tous les clients Velora et leurs coordonnées."
           columns={[
@@ -131,6 +133,7 @@ function VeloraPage() {
       <TabsContent value="depenses">
         <CrudPage
           table="velora_expenses"
+              researchSection="velora"
           title="Dépenses"
           description="Toutes les dépenses de Velora."
           columns={[

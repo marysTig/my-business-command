@@ -24,6 +24,7 @@ function ProductsPage() {
   return (
     <CrudPage
       table="digital_products"
+      researchSection="products"
       title="Digital Products"
       description="What you sell, with delivery links and sales."
       statusField="status"

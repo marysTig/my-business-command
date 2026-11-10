@@ -17,10 +17,17 @@
  *   GET    /api/tasks?status=&limit= list tasks
  *   POST   /api/tasks               { title, priority?, due_date?, description? } -> new task
  *   PATCH  /api/tasks/:id           { status } -> move a task
+ *   GET    /api/research?section=   saved research reports (newest first)
+ *   POST   /api/research            { section, question } -> runs research, saves a report
+ *   POST   /api/research/:id/apply  writes that report's proposed record changes
+ *
+ * Sections for research: tasks, customers, sales, cars, saas, websites, products,
+ * resources, leads, properties, velora, expenses, team.
  */
 
 import { runLoop, type Message } from "@/lib/ai/client";
 import { computeInsights } from "@/lib/ai/insights";
+import { researchInternals } from "@/lib/ai/research";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
 import { executeTool, tools } from "@/lib/ai/tools";
 
@@ -183,6 +190,9 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
           "GET /api/tasks?status=&limit=",
           "POST /api/tasks",
           "PATCH /api/tasks/:id",
+          "GET /api/research?section=",
+          "POST /api/research",
+          "POST /api/research/:id/apply",
         ],
       });
     }
@@ -208,8 +218,8 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
         const limit = Number.isFinite(requested) ? Math.min(Math.max(Math.trunc(requested), 1), 200) : 50;
         const rows = await executeTool("query_table", {
           table: "tasks",
-          filters: status ? [{ column: "status", operator: "eq", value: status }] : [],
-          order_by: "created_at",
+          filters: [{ column: "status", operator: "eq", value: status }],
+          order_by: "status",
           order_asc: false,
           limit,
         });
@@ -221,6 +231,38 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
         return json({ task }, 201);
       }
       throw new HttpError(405, "Use GET or POST.");
+    }
+
+    if (path === "/api/research") {
+      if (request.method === "GET") {
+        const section = (url.searchParams.get("section") ?? "").trim();
+        const rows = await executeTool("query_table", {
+          table: "research_reports",
+          filters: [
+            { column: "section", operator: "eq", value: section },
+          ],
+          order_by: "created_at",
+          order_asc: false,
+          limit: 20,
+        });
+        return json({ reports: rows });
+      }
+      if (request.method === "POST") {
+        const body = await readJson(request);
+        const report = await researchInternals.run(
+          String(body["section"] ?? "").trim(),
+          String(body["question"] ?? "").trim(),
+        );
+        return json({ report }, 201);
+      }
+      throw new HttpError(405, "Use GET or POST.");
+    }
+
+    const researchApplyMatch = path.match(/^\/api\/research\/([^/]+)\/apply$/);
+    if (researchApplyMatch) {
+      if (request.method !== "POST") throw new HttpError(405, "Use POST.");
+      const result = await researchInternals.apply(decodeURIComponent(researchApplyMatch[1]));
+      return json(result);
     }
 
     const taskMatch = path.match(/^\/api\/tasks\/([^/]+)$/);
@@ -239,7 +281,10 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
     throw new HttpError(404, `Unknown endpoint: ${request.method} ${path}`);
   } catch (error) {
     if (error instanceof HttpError) return json({ error: error.message }, error.status);
-    const message = error instanceof Error ? error.message : "Unknown error.";
+    const message =
+      error instanceof Error
+        ? error.message
+        : ((error as { message?: string } | null)?.message ?? "Unknown error.");
     console.error("[api]", message);
     return json({ error: message }, 500);
   }
