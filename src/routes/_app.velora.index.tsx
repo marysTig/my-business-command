@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
+import { SectionResearch } from "@/components/section-research";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -65,7 +66,7 @@ function VeloraPage() {
   const orderPage = (title: string, description: string, columns: any[], status = false) => (
     <CrudPage
       table="velora_orders"
-              researchSection="velora"
+      researchSection="velora"
       title={title}
       description={description}
       detailPath="/velora/$id"
@@ -87,7 +88,7 @@ function VeloraPage() {
       <TabsContent value="clients">
         <CrudPage
           table="velora_clients"
-              researchSection="velora"
+          researchSection="velora"
           title="Clients"
           description="Tous les clients Velora et leurs coordonnées."
           columns={[
@@ -98,6 +99,7 @@ function VeloraPage() {
             { key: "email", header: "Email" },
           ]}
         />
+        <SectionResearch section="velora" />
       </TabsContent>
 
       <TabsContent value="commandes" className="space-y-6">
@@ -107,6 +109,7 @@ function VeloraPage() {
           { key: "order_date", header: "Date commande", render: (r: any) => formatDate(r["order_date"]) },
           { key: "status", header: "Statut", render: (r: any) => <StatusBadge value={r["status"]} /> },
         ], true)}
+        <SectionResearch section="velora" />
       </TabsContent>
 
       <TabsContent value="financement">
@@ -119,6 +122,7 @@ function VeloraPage() {
           { key: "financing_org", header: "Banque" },
           { key: "financing_status", header: "Statut", render: (r: any) => <StatusBadge value={r["financing_status"]} /> },
         ])}
+        <SectionResearch section="velora" />
       </TabsContent>
 
       <TabsContent value="vendu">
@@ -128,12 +132,13 @@ function VeloraPage() {
           { key: "sale_price", header: "Prix de vente", render: money("sale_price") },
           { key: "profit", header: "Bénéfice", render: (r: any) => formatMoney(Number(r["sale_price"] ?? 0) - Number(r["expenses"] ?? 0), r["currency"]) },
         ])}
+        <SectionResearch section="velora" />
       </TabsContent>
 
       <TabsContent value="depenses">
         <CrudPage
           table="velora_expenses"
-              researchSection="velora"
+          researchSection="velora"
           title="Dépenses"
           description="Toutes les dépenses de Velora."
           columns={[
@@ -144,6 +149,7 @@ function VeloraPage() {
             { key: "notes", header: "Notes" },
           ]}
         />
+        <SectionResearch section="velora" />
       </TabsContent>
     </Tabs>
   );
