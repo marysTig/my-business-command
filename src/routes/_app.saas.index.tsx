@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
+import { ProspectFiles } from "@/components/prospect-files";
 import { StatusBadge } from "@/components/status-badge";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/db";
@@ -25,31 +26,34 @@ export const Route = createFileRoute("/_app/saas/")({
 
 function SaasPage() {
   return (
-    <CrudPage
-      table="saas_projects"
-      researchSection="saas"
-      title="SaaS Projects"
-      description="Your own products, from idea to launch."
-      statusField="status"
-      statusOptions={SAAS_STATUSES}
-      detailPath="/saas/$id"
-      columns={[
-        { key: "project_name", header: "Project" },
-        { key: "status", header: "Status", render: (r) => <StatusBadge value={r["status"]} /> },
-        {
-          key: "progress_percentage",
-          header: "Progress",
-          render: (r) => (
-            <div className="flex w-32 items-center gap-2">
-              <Progress value={Number(r["progress_percentage"] ?? 0)} className="h-2" />
-              <span className="text-xs tabular-nums text-muted-foreground">
-                {r["progress_percentage"] ?? 0}%
-              </span>
-            </div>
-          ),
-        },
-        { key: "target_date", header: "Target", render: (r) => formatDate(r["target_date"]) },
-      ]}
-    />
+    <>
+      <CrudPage
+        table="saas_projects"
+        researchSection="saas"
+        title="SaaS Projects"
+        description="Your own products, from idea to launch."
+        statusField="status"
+        statusOptions={SAAS_STATUSES}
+        detailPath="/saas/$id"
+        columns={[
+          { key: "project_name", header: "Project" },
+          { key: "status", header: "Status", render: (r) => <StatusBadge value={r["status"]} /> },
+          {
+            key: "progress_percentage",
+            header: "Progress",
+            render: (r) => (
+              <div className="flex w-32 items-center gap-2">
+                <Progress value={Number(r["progress_percentage"] ?? 0)} className="h-2" />
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {r["progress_percentage"] ?? 0}%
+                </span>
+              </div>
+            ),
+          },
+          { key: "target_date", header: "Target", render: (r) => formatDate(r["target_date"]) },
+        ]}
+      />
+      <ProspectFiles />
+    </>
   );
 }
