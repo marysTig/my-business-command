@@ -308,6 +308,9 @@ export const resourceFields: Field[] = [
   { name: "category", label: "Category", type: "select", options: RESOURCE_CATEGORIES },
   { name: "description", label: "Description", type: "textarea" },
   { name: "tags", label: "Tags (comma separated)", type: "tags" },
+  { name: "file_name", label: "File name", type: "text" },
+  { name: "file_type", label: "File type", type: "text" },
+  { name: "file_size", label: "File size (bytes)", type: "number" },
   ...linkFields,
   { name: "notes", label: "Notes", type: "textarea" },
 ];

@@ -44,6 +44,7 @@ export function CrudPage({
   detailPath,
   toolbar,
   emptyTitle,
+  researchSection,
 }: {
   table: string;
   title: string;
@@ -56,7 +57,6 @@ export function CrudPage({
   emptyTitle?: string;
   researchSection?: string;
 }) {
-  const researchSection: string | undefined = researchSection;
   const { data = [], isLoading } = useRows(table, {});
   const del = useDeleteRow(table);
   const [term, setTerm] = useState("");
