@@ -43,3 +43,5 @@ supabase/new-project/
 
 # local tunnel binary
 .tools/
+
+*.pid

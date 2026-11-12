@@ -63,10 +63,47 @@ Render, a small Hetzner/DigitalOcean VPS.
   `fly secrets set TELEGRAM_BOT_TOKEN=... TELEGRAM_OWNER_CHAT_ID=...` and
   `fly deploy`. Do not expose a port; the bot only calls out.
 
+## 5ter. Windows (this computer)
+
+The bot can run on the same PC as the project. Two files make that reliable:
+
+- `scripts/start-bot.cmd` — launches the supervisor hidden, no console left open
+- `scripts/start-bot.ps1` — runs the bot and restarts it 10 s after any crash
+
+Start it once (or after a change):
+
+```bat
+scripts\start-bot.cmd
+```
+
+Make it start at every login (no admin needed):
+
+1. `Win+R` → `shell:startup` → Entrée
+2. Clic droit → Nouveau → Raccourci → cible :
+   `C:\Users\<you>\...\my-business-command\scripts\start-bot.cmd`
+3. Nommer le raccourci « My Business OS bot »
+
+Watch it work:
+
+```bat
+type .telegram-bot.log
+```
+
+Stop it:
+
+```powershell
+Stop-Process -Id (Get-Content .telegram-bot.pid)
+```
+
+Notes: only one copy may run (a second one steals Telegram's update offset), the PC
+must stay awake, and a crash is retried automatically. The log lives in
+`.telegram-bot.log` and is git-ignored.
+
 ## 6. Sanity checks
 
 ```bash
 bun run scripts/telegram-bot.mjs --check     # token valid, owner lock state
+npm run telegram:check                       # same thing through npm
 curl -s -H "Authorization: Bearer $DASHBOARD_API_KEY" \
   https://site-e42bb61bef6248459e7b4797d3fd7e49.freebuff.page/api/health
 ```
