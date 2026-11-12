@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { ACCESS_CODE } from "@/lib/access-code";
 import { formatDate, useRows, type Row } from "@/lib/db";
 import { getMember } from "@/lib/member";
 
@@ -47,6 +48,8 @@ export function ProspectFiles() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [projectId, setProjectId] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [fileUrl, setFileUrl] = useState("");
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -59,13 +62,59 @@ export function ProspectFiles() {
   });
 
   async function addFile() {
-    if (!projectId || !file || uploading) return;
-    if (!ALLOWED.test(file.name)) {
+    if (uploading) return;
+    const link = fileUrl.trim();
+    // Never fail silently: say what is missing instead of a dead grey button.
+    if (!projectId) {
+      setResult({ ok: false, message: "Choisissez d'abord un projet SaaS." });
+      toast.error("Choisissez d'abord un projet SaaS dans la liste.");
+      return;
+    }
+    if (!file && !link) {
+      setResult({
+        ok: false,
+        message: "Choisissez un fichier, ou collez un lien https:// vers un .doc/.docx/.xls/.xlsx.",
+      });
+      toast.error("Choisissez un fichier ou collez un lien vers le fichier.");
+      return;
+    }
+    if (!link && file && !ALLOWED.test(file.name)) {
+      setResult({ ok: false, message: "Formats acceptés : .doc, .docx, .xls, .xlsx." });
       toast.error("Formats acceptés : Word (.doc, .docx) ou Excel (.xls, .xlsx).");
       return;
     }
+
     setUploading(true);
+    setResult(null);
     try {
+      if (link) {
+        // Bot-friendly path: no OS file dialog, the server downloads the link.
+        if (!/^https:\/\//i.test(link)) throw new Error("Le lien doit commencer par https://.");
+        const response = await fetch("/api/prospect-files", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-access-code": ACCESS_CODE },
+          body: JSON.stringify({
+            project_id: projectId,
+            file_url: link,
+            file_name: file?.name ?? undefined,
+          }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          file?: { file_name?: string };
+          error?: string;
+        };
+        if (!response.ok) throw new Error(payload.error ?? `Échec (HTTP ${response.status}).`);
+        const name = payload.file?.file_name ?? "Fichier";
+        setResult({ ok: true, message: `${name} ajouté à la liste.` });
+        toast.success(`${name} ajouté`);
+        setFileUrl("");
+        setFile(null);
+        if (inputRef.current) inputRef.current.value = "";
+        await queryClient.invalidateQueries({ queryKey: [TABLE] });
+        return;
+      }
+
+      if (!file) return;
       const path = `${projectId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         upsert: false,
@@ -83,12 +132,15 @@ export function ProspectFiles() {
       });
       if (error) throw error;
 
+      setResult({ ok: true, message: `${file.name} ajouté à la liste.` });
       toast.success(`${file.name} ajouté`);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
       await queryClient.invalidateQueries({ queryKey: [TABLE] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Échec de l'ajout du fichier");
+      const message = error instanceof Error ? error.message : "Échec de l'ajout du fichier";
+      setResult({ ok: false, message });
+      toast.error(message);
     } finally {
       setUploading(false);
     }
@@ -153,10 +205,30 @@ export function ProspectFiles() {
             />
           </label>
 
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              …ou lien du fichier (bots)
+            </span>
+            <input
+              type="url"
+              aria-label="Lien https du fichier"
+              data-testid="prospect-file-url"
+              placeholder="https://…/liste.xlsx"
+              value={fileUrl}
+              onChange={(event) => {
+                setFileUrl(event.target.value);
+                setResult(null);
+              }}
+              className="h-9 w-full min-w-56 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            />
+          </label>
+
           <Button
+            type="button"
             size="sm"
             data-testid="prospect-add"
-            disabled={!projectId || !file || uploading}
+            data-state={uploading ? "uploading" : result ? (result.ok ? "done" : "error") : "idle"}
+            disabled={uploading}
             onClick={() => void addFile()}
           >
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
@@ -164,9 +236,25 @@ export function ProspectFiles() {
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          {file ? `Fichier sélectionné : ${file.name}` : ".doc, .docx, .xls ou .xlsx"}
+        <p className="text-xs text-muted-foreground" data-testid="prospect-status">
+          {!projectId
+            ? "Choisissez un projet SaaS, puis un fichier .doc, .docx, .xls ou .xlsx, puis cliquez sur « Ajouter »."
+            : file
+              ? `Fichier sélectionné : ${file.name} — cliquez sur « Ajouter ».`
+              : "Projet choisi. Sélectionnez maintenant un fichier .doc, .docx, .xls ou .xlsx."}
         </p>
+
+        {result ? (
+          <p
+            data-testid="prospect-result"
+            role="status"
+            className={
+              result.ok ? "text-xs font-medium text-emerald-600" : "text-xs font-medium text-destructive"
+            }
+          >
+            {result.message}
+          </p>
+        ) : null}
 
         {!projectId ? (
           <p className="text-xs text-muted-foreground">

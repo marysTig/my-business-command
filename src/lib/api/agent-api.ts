@@ -23,12 +23,30 @@
  *   GET    /api/prospect-files?project_id=|project=   Word/Excel files of a SaaS project
  *   POST   /api/prospect-files      multipart: file + project_id or project -> uploads it
  *   DELETE /api/prospect-files/:id  removes a prospect file
+ *   GET    /api/tables              every table with its readable/writable columns
+ *   GET    /api/records/:table      rows; query params are filters (?status=eq.Active),
+ *                                   plus limit (1-500), offset, order, asc, select
+ *   GET    /api/records/:table/:id  one row
+ *   POST   /api/records/:table      { ...columns } -> creates a row, returns it
+ *   PATCH  /api/records/:table/:id  { ...columns } -> updates that row
+ *   DELETE /api/records/:table/:id  deletes that row
+ *
+ * Filter operators: eq (default), neq, gt, gte, lt, lte, ilike, is (e.g. ?notes=ilike.invoice,
+ * ?closed_at=is.null). Unknown columns are rejected with 400 and the valid list.
  *
  * Sections for research: tasks, customers, sales, cars, saas, websites, products,
  * resources, leads, properties, velora, expenses, team.
  */
 
+import { ACCESS_CODE } from "@/lib/access-code";
 import { runLoop, type Message } from "@/lib/ai/client";
+import {
+  TABLE_COLUMNS,
+  TABLE_NAMES,
+  isValidColumn,
+  isValidTable,
+  type TableName,
+} from "@/lib/ai/schemas";
 import { computeInsights } from "@/lib/ai/insights";
 import { researchInternals } from "@/lib/ai/research";
 import { SYSTEM_PROMPT } from "@/lib/ai/prompt";
@@ -210,12 +228,149 @@ async function listProspectFiles(url: URL): Promise<unknown[]> {
   });
 }
 
+/** Uploads bytes to the bucket and records the row. Used by both upload paths. */
+async function storeProspectFile(input: {
+  project: { id: string; name: string };
+  fileName: string;
+  fileType: string | null;
+  bytes: ArrayBuffer;
+  size: number;
+}): Promise<Response> {
+  const { url, key } = supabaseConfig();
+  const safeName = input.fileName.replace(/[^\w.\- ()]/g, "_").slice(-120);
+  const path = `${input.project.id}/${Date.now()}-${safeName}`;
+
+  const put = await fetch(
+    `${url}/storage/v1/object/${PROSPECT_BUCKET}/${path
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")}`,
+    {
+      method: "POST",
+      headers: supabaseHeaders(key, {
+        "content-type": input.fileType || "application/octet-stream",
+        "x-upsert": "false",
+      }),
+      body: input.bytes,
+    },
+  );
+  if (!put.ok) {
+    throw new HttpError(500, `Upload failed: ${await put.text()}`);
+  }
+
+  const insert = await fetch(`${url}/rest/v1/${PROSPECT_TABLE}`, {
+    method: "POST",
+    headers: supabaseHeaders(key, {
+      "content-type": "application/json",
+      prefer: "return=representation",
+    }),
+    body: JSON.stringify({
+      saas_project_id: input.project.id,
+      file_name: input.fileName,
+      file_type: input.fileType,
+      file_size: input.size,
+      storage_path: path,
+      created_by: "api",
+    }),
+  });
+  if (!insert.ok) {
+    await fetch(`${url}/storage/v1/object/${PROSPECT_BUCKET}/${path}`, {
+      method: "DELETE",
+      headers: supabaseHeaders(key),
+    });
+    throw new HttpError(500, `Could not save the file record: ${await insert.text()}`);
+  }
+
+  const publicLink = prospectPublicUrl(url, path);
+  const [row] = (await insert.json()) as Array<Record<string, unknown>>;
+  return json(
+    {
+      file: {
+        id: row?.["id"] ?? null,
+        project: input.project.name,
+        project_id: input.project.id,
+        file_name: input.fileName,
+        file_type: input.fileType,
+        file_size: input.size,
+        storage_path: path,
+        viewer_url: prospectViewerUrl(publicLink),
+        download_url: publicLink,
+      },
+    },
+    201,
+  );
+}
+
+/**
+ * Bot-friendly import: JSON { project_id|project, file_url, file_name? }.
+ * No OS file dialog involved, so an automation can always complete the action.
+ */
+async function importProspectFileFromUrl(request: Request): Promise<Response> {
+  const body = await readJson(request);
+  const fileUrl = String(body["file_url"] ?? "").trim();
+  if (!fileUrl) throw new HttpError(400, "file_url is required when sending JSON.");
+  let parsed: URL;
+  try {
+    parsed = new URL(fileUrl);
+  } catch {
+    throw new HttpError(400, "file_url must be a valid URL.");
+  }
+  if (parsed.protocol !== "https:") throw new HttpError(400, "file_url must use https.");
+  if (/^(localhost|127\.|0\.|10\.|192\.168\.|169\.254\.|\[::1\])/i.test(parsed.hostname)) {
+    throw new HttpError(400, "file_url must be a public link.");
+  }
+
+  const project = await resolveProject({
+    projectId: String(body["project_id"] ?? ""),
+    projectName: String(body["project"] ?? ""),
+  });
+
+  const fileName =
+    String(body["file_name"] ?? "").trim() ||
+    decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() ?? "file");
+  if (!PROSPECT_ALLOWED.test(fileName)) {
+    throw new HttpError(400, "Only Word (.doc, .docx) or Excel (.xls, .xlsx) files are accepted.");
+  }
+  const declared = Number(body["file_size"] ?? 0);
+  if (Number.isFinite(declared) && declared > PROSPECT_MAX_BYTES) {
+    throw new HttpError(413, "File is larger than 10 MB.");
+  }
+
+  let download: Response;
+  try {
+    download = await fetch(fileUrl, { redirect: "follow" });
+  } catch (error) {
+    throw new HttpError(
+      400,
+      `Could not download file_url: ${error instanceof Error ? error.message : "network error"}.`,
+    );
+  }
+  if (!download.ok) {
+    throw new HttpError(400, `Could not download file_url (HTTP ${download.status}).`);
+  }
+  const bytes = await download.arrayBuffer();
+  if (bytes.byteLength > PROSPECT_MAX_BYTES) {
+    throw new HttpError(413, "File is larger than 10 MB.");
+  }
+
+  return await storeProspectFile({
+    project,
+    fileName,
+    fileType: download.headers.get("content-type") ?? null,
+    bytes,
+    size: bytes.byteLength,
+  });
+}
+
 async function uploadProspectFile(request: Request): Promise<Response> {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.toLowerCase().includes("multipart/form-data")) {
+  const contentType = (request.headers.get("content-type") ?? "").toLowerCase();
+  if (contentType.includes("application/json")) {
+    return await importProspectFileFromUrl(request);
+  }
+  if (!contentType.includes("multipart/form-data")) {
     throw new HttpError(
       415,
-      "Send multipart/form-data with a 'file' field plus 'project_id' or 'project'.",
+      "Send multipart/form-data with a 'file' field, or JSON with file_url, plus 'project_id' or 'project'.",
     );
   }
 
@@ -238,70 +393,13 @@ async function uploadProspectFile(request: Request): Promise<Response> {
     projectName: String(form.get("project") ?? ""),
   });
 
-  const { url, key } = supabaseConfig();
-  const safeName = fileName.replace(/[^\w.\- ()]/g, "_").slice(-120);
-  const path = `${project.id}/${Date.now()}-${safeName}`;
-  const bytes = await upload.arrayBuffer();
-
-  const put = await fetch(
-    `${url}/storage/v1/object/${PROSPECT_BUCKET}/${path
-      .split("/")
-      .map(encodeURIComponent)
-      .join("/")}`,
-    {
-      method: "POST",
-      headers: supabaseHeaders(key, {
-        "content-type": upload.type || "application/octet-stream",
-        "x-upsert": "false",
-      }),
-      body: bytes,
-    },
-  );
-  if (!put.ok) {
-    throw new HttpError(500, `Upload failed: ${await put.text()}`);
-  }
-
-  const insert = await fetch(`${url}/rest/v1/${PROSPECT_TABLE}`, {
-    method: "POST",
-    headers: supabaseHeaders(key, {
-      "content-type": "application/json",
-      prefer: "return=representation",
-    }),
-    body: JSON.stringify({
-      saas_project_id: project.id,
-      file_name: fileName,
-      file_type: upload.type || null,
-      file_size: upload.size,
-      storage_path: path,
-      created_by: "api",
-    }),
+  return await storeProspectFile({
+    project,
+    fileName,
+    fileType: upload.type || null,
+    bytes: await upload.arrayBuffer(),
+    size: upload.size,
   });
-  if (!insert.ok) {
-    await fetch(`${url}/storage/v1/object/${PROSPECT_BUCKET}/${path}`, {
-      method: "DELETE",
-      headers: supabaseHeaders(key),
-    });
-    throw new HttpError(500, `Could not save the file record: ${await insert.text()}`);
-  }
-
-  const publicLink = prospectPublicUrl(url, path);
-  const [row] = (await insert.json()) as Array<Record<string, unknown>>;
-  return json(
-    {
-      file: {
-        id: row?.["id"] ?? null,
-        project: project.name,
-        project_id: project.id,
-        file_name: fileName,
-        file_type: upload.type || null,
-        file_size: upload.size,
-        storage_path: path,
-        viewer_url: prospectViewerUrl(publicLink),
-        download_url: publicLink,
-      },
-    },
-    201,
-  );
 }
 
 async function deleteProspectFile(id: string): Promise<Response> {
@@ -362,6 +460,147 @@ async function runAgent(
   return { reply: String(reply.content ?? ""), ms: Date.now() - started };
 }
 
+/* ------------------------------------------------------------------ *
+ * Generic record endpoints: /api/records/:table
+ *
+ * Reads go straight to Supabase REST so the bot can paginate and filter
+ * freely; writes go through the existing AI tools, which already validate
+ * every column against the schema registry and refuse protected columns.
+ * ------------------------------------------------------------------ */
+
+const RECORD_LIST_MAX = 500;
+const RESERVED_PARAMS = new Set(["limit", "offset", "order", "asc", "select"]);
+const READ_ONLY_COLUMNS = ["id", "created_at", "user_id"];
+
+function tableParam(raw: string): TableName {
+  const table = decodeURIComponent(raw);
+  if (!isValidTable(table)) {
+    throw new HttpError(404, `Unknown table "${table}". List them with GET /api/tables.`);
+  }
+  return table;
+}
+
+function recordColumns(table: TableName, raw: string | null): string[] {
+  const requested = (raw ?? "").trim();
+  const columns = requested
+    ? requested
+        .split(",")
+        .map((column) => column.trim())
+        .filter(Boolean)
+    : [...(TABLE_COLUMNS[table] as readonly string[])];
+  for (const column of columns) {
+    if (!isValidColumn(table, column)) {
+      throw new HttpError(
+        400,
+        `Unknown column "${column}" on "${table}". Valid columns: ${TABLE_COLUMNS[table].join(", ")}.`,
+      );
+    }
+  }
+  return columns;
+}
+
+function clampInt(raw: string | null, fallback: number, min: number, max: number): number {
+  const value = Number(raw ?? fallback);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(Math.trunc(value), min), max);
+}
+
+/** PostgREST query string built from ?<column>=<operator>.<value> pairs. */
+function listQuery(table: TableName, url: URL): string {
+  const params = new URLSearchParams();
+  params.set("select", recordColumns(table, url.searchParams.get("select")).join(","));
+
+  for (const [key, raw] of url.searchParams) {
+    if (RESERVED_PARAMS.has(key)) continue;
+    if (!isValidColumn(table, key)) {
+      throw new HttpError(
+        400,
+        `Unknown filter column "${key}" on "${table}". Valid columns: ${TABLE_COLUMNS[table].join(", ")}.`,
+      );
+    }
+    params.append(key, raw);
+  }
+
+  const order = (url.searchParams.get("order") ?? "").trim();
+  if (order && !isValidColumn(table, order)) {
+    throw new HttpError(400, `Unknown order column "${order}" on "${table}".`);
+  }
+  const sortColumn =
+    order || (TABLE_COLUMNS[table].includes("created_at") ? "created_at" : "id");
+  const ascending = ["1", "true", "asc", "yes"].includes(
+    (url.searchParams.get("asc") ?? "").toLowerCase(),
+  );
+  params.set("order", `${sortColumn}.${ascending ? "asc" : "desc"}`);
+  params.set("limit", String(clampInt(url.searchParams.get("limit"), 100, 1, RECORD_LIST_MAX)));
+
+  const offset = Number(url.searchParams.get("offset") ?? "0");
+  if (Number.isFinite(offset) && offset > 0) params.set("offset", String(Math.trunc(offset)));
+
+  return params.toString();
+}
+
+async function listRecords(table: TableName, url: URL): Promise<Response> {
+  const { url: base, key } = supabaseConfig();
+  const response = await fetch(`${base}/rest/v1/${table}?${listQuery(table, url)}`, {
+    headers: supabaseHeaders(key, { prefer: "count=exact" }),
+  });
+  if (!response.ok) {
+    throw new HttpError(500, `Could not read ${table}: ${await response.text()}`);
+  }
+  const rows = (await response.json()) as unknown[];
+  const range = response.headers.get("content-range") ?? "";
+  const total = Number(range.split("/")[1] ?? "");
+  return json({
+    table,
+    count: Array.isArray(rows) ? rows.length : 0,
+    total: Number.isFinite(total) ? total : null,
+    rows,
+  });
+}
+
+async function getRecord(table: TableName, id: string): Promise<Response> {
+  const { url: base, key } = supabaseConfig();
+  const select = (TABLE_COLUMNS[table] as readonly string[]).join(",");
+  const response = await fetch(
+    `${base}/rest/v1/${table}?select=${select}&id=eq.${encodeURIComponent(id)}&limit=1`,
+    { headers: supabaseHeaders(key) },
+  );
+  if (!response.ok) {
+    throw new HttpError(500, `Could not read ${table}: ${await response.text()}`);
+  }
+  const rows = (await response.json()) as Array<Record<string, unknown>>;
+  if (!rows[0]) throw new HttpError(404, `No row with id ${id} in "${table}".`);
+  return json({ table, record: rows[0] });
+}
+
+async function createRecord(table: TableName, request: Request): Promise<Response> {
+  const body = await readJson(request);
+  const values: Record<string, unknown> = { ...body };
+  if (isValidColumn(table, "created_by") && values["created_by"] === undefined) {
+    values["created_by"] = "API bot";
+  }
+  // tasks.status is NOT NULL; a bot creating a task expects it to land in To Do.
+  if (table === "tasks" && (values["status"] === undefined || values["status"] === null)) {
+    values["status"] = "To Do";
+  }
+  const result = (await executeTool("create_record", { table, values })) as { row?: unknown };
+  return json({ table, record: result?.row ?? null }, 201);
+}
+
+async function updateRecord(table: TableName, id: string, request: Request): Promise<Response> {
+  const values = await readJson(request);
+  const result = (await executeTool("update_record", { table, id, values })) as {
+    rows?: unknown[];
+  };
+  const rows = result?.rows ?? [];
+  return json({ table, record: rows[0] ?? null, updated: rows.length });
+}
+
+async function deleteRecord(table: TableName, id: string): Promise<Response> {
+  const result = await executeTool("delete_record", { table, id, confirm: true });
+  return json({ table, deleted: id, result });
+}
+
 /**
  * Returns null when the request is not for this API, so the caller can fall
  * through to the normal SSR/app handler.
@@ -370,7 +609,7 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
-  if (!path.startsWith("/api/")) return null;
+  if (path !== "/api" && !path.startsWith("/api/")) return null;
 
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -390,7 +629,16 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
       503,
     );
   }
-  if (!safeEqual(presentedKey(request), expected)) {
+  // The dashboard UI imports a prospect file from a link without holding the API
+  // key: for that one call it may present the gate code instead.
+  const isJsonProspectImport =
+    path === "/api/prospect-files" &&
+    request.method === "POST" &&
+    (request.headers.get("content-type") ?? "").toLowerCase().includes("application/json");
+  const gateCode = (request.headers.get("x-access-code") ?? "").trim();
+  const authorizedByCode = isJsonProspectImport && gateCode.length > 0 && safeEqual(gateCode, ACCESS_CODE);
+
+  if (!authorizedByCode && !safeEqual(presentedKey(request), expected)) {
     return json(
       { error: "Unauthorized.", hint: "Send the key as: Authorization: Bearer <DASHBOARD_API_KEY>" },
       401,
@@ -417,7 +665,16 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
           "GET /api/prospect-files?project_id=|project=",
           "POST /api/prospect-files",
           "DELETE /api/prospect-files/:id",
+          "GET /api/tables",
+          "GET /api/records/:table?<column>=<value>&limit=&offset=&order=&asc=&select=",
+          "GET /api/records/:table/:id",
+          "POST /api/records/:table",
+          "PATCH /api/records/:table/:id",
+          "DELETE /api/records/:table/:id",
         ],
+        tables: TABLE_NAMES,
+        filter_operators: ["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "is"],
+        docs: "Every endpoint accepts the key in Authorization: Bearer <key> or X-API-Key.",
       });
     }
 
@@ -516,6 +773,44 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
         status,
       });
       return json({ task });
+    }
+
+    if (path === "/api/tables") {
+      if (request.method !== "GET") throw new HttpError(405, "Use GET.");
+      return json({
+        tables: TABLE_NAMES.map((table) => ({
+          table,
+          columns: TABLE_COLUMNS[table],
+          writable: (TABLE_COLUMNS[table] as readonly string[]).filter(
+            (column) => !READ_ONLY_COLUMNS.includes(column),
+          ),
+        })),
+      });
+    }
+
+    if (path === "/api/records") {
+      throw new HttpError(
+        400,
+        "Name a table: /api/records/:table (see GET /api/tables). Backwards-compatible shortcuts: /api/tasks, /api/research.",
+      );
+    }
+
+    const recordsMatch = path.match(/^\/api\/records\/([^/]+)$/);
+    if (recordsMatch) {
+      const table = tableParam(recordsMatch[1]);
+      if (request.method === "GET") return await listRecords(table, url);
+      if (request.method === "POST") return await createRecord(table, request);
+      throw new HttpError(405, "Use GET or POST.");
+    }
+
+    const recordMatch = path.match(/^\/api\/records\/([^/]+)\/([^/]+)$/);
+    if (recordMatch) {
+      const table = tableParam(recordMatch[1]);
+      const id = decodeURIComponent(recordMatch[2]);
+      if (request.method === "GET") return await getRecord(table, id);
+      if (request.method === "PATCH") return await updateRecord(table, id, request);
+      if (request.method === "DELETE") return await deleteRecord(table, id);
+      throw new HttpError(405, "Use GET, PATCH or DELETE.");
     }
 
     throw new HttpError(404, `Unknown endpoint: ${request.method} ${path}`);

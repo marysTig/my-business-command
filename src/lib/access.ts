@@ -1,15 +1,14 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Access code that guards the whole dashboard.
+ * Access code that guards the whole dashboard (see access-code.ts).
  *
- * Change the fallback below (or set VITE_ACCESS_CODE at build time) to pick
- * your own code. The value lives in the bundle, so this is a simple gate
- * against casual access, not real per-user auth: anyone who reads the bundle
- * can find the code, and the Supabase key still ships to the browser.
+ * The value lives in the bundle, so this is a simple gate against casual
+ * access, not real per-user auth: anyone who reads the bundle can find the
+ * code, and the Supabase key still ships to the browser.
  */
-export const ACCESS_CODE =
-  (import.meta.env?.["VITE_ACCESS_CODE"] as string | undefined)?.trim() || "M3AK-2026";
+export { ACCESS_CODE } from "@/lib/access-code";
+import { ACCESS_CODE } from "@/lib/access-code";
 
 const KEY = "bos-access";
 const listeners = new Set<() => void>();

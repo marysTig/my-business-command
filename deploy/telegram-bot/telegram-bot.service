@@ -1,0 +1,20 @@
+[Unit]
+Description=My Business OS Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust to where the repository lives on the server.
+WorkingDirectory=/opt/my-business-command
+# Bun runs the TypeScript imports inside the bot directly.
+ExecStart=/usr/local/bin/bun run scripts/telegram-bot.mjs
+Restart=always
+RestartSec=5
+# Secrets live in .env.local inside the working directory (never commit it).
+EnvironmentFile=-/opt/my-business-command/.env.local
+User=bos
+Group=bos
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+services:
+  telegram-bot:
+    build:
+      context: ../..
+      dockerfile: deploy/telegram-bot/Dockerfile
+    image: my-business-os-bot
+    container_name: my-business-os-bot
+    restart: unless-stopped
+    # Secrets come from .env.local (never committed, never baked into the image).
+    env_file:
+      - ../../.env.local
