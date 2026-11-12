@@ -16,13 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useDeleteRow, useRows, type Row } from "@/lib/db";
 import { labelColumn, searchColumns } from "@/lib/entities";
@@ -87,6 +80,7 @@ export function CrudPage({
             {toolbar}
             <Button
               size="sm"
+              data-testid="crud-new"
               onClick={() => {
                 setEditing(null);
                 setFormOpen(true);
@@ -103,25 +97,27 @@ export function CrudPage({
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={term}
+            data-testid="crud-search"
             onChange={(e) => setTerm(e.target.value)}
             placeholder={`Search ${title.toLowerCase()}…`}
             className="pl-9"
           />
         </div>
         {statusField && statusOptions ? (
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="sm:w-52">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {statusOptions.map((o) => (
-                <SelectItem key={o} value={o}>
-                  {o}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select
+            aria-label="Filtrer par statut"
+            data-testid="crud-status-filter"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-52"
+          >
+            <option value="all">All statuses</option>
+            {statusOptions.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
         ) : null}
       </div>
 
@@ -158,7 +154,7 @@ export function CrudPage({
             </TableHeader>
             <TableBody>
               {rows.map((row) => (
-                <TableRow key={row["id"]}>
+                <TableRow key={row["id"]} data-testid={`row-${row["id"]}`}>
                   {columns.map((c, i) => (
                     <TableCell key={c.key} className={c.className}>
                       {i === 0 && detailPath ? (

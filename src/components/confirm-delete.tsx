@@ -30,8 +30,9 @@ export function ConfirmDelete({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel data-testid="confirm-cancel">Cancel</AlertDialogCancel>
           <AlertDialogAction
+            data-testid="confirm-delete"
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={onConfirm}
           >

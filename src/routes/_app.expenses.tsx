@@ -11,13 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { formatDate, formatMoney, useDeleteRow, useRows, useSaveRow, type Row } from "@/lib/db";
 import { SectionResearch } from "@/components/section-research";
 import { EXPENSE_CATEGORIES, VELORA_CURRENCIES } from "@/lib/entities";
@@ -199,18 +192,19 @@ function ExpensesPage() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Catégorie</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EXPENSE_CATEGORIES.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                aria-label="Categorie"
+                data-testid="expenses-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {EXPENSE_CATEGORIES.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <Label htmlFor="expense-date" className="text-xs text-muted-foreground">
@@ -226,20 +220,26 @@ function ExpensesPage() {
             <div className="flex items-end gap-2">
               <div className="w-24">
                 <Label className="text-xs text-muted-foreground">Devise</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VELORA_CURRENCIES.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  aria-label="Devise"
+                  data-testid="expenses-currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {VELORA_CURRENCIES.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <Button type="submit" className="flex-1" disabled={save.isPending}>
+              <Button
+                type="submit"
+                data-testid="expense-add"
+                className="flex-1"
+                disabled={save.isPending}
+              >
                 <Plus className="size-4" /> Ajouter
               </Button>
             </div>

@@ -14,14 +14,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useRows, useSaveRow, type Row } from "@/lib/db";
 import { entityFields, labelColumn, type Field } from "@/lib/entities";
@@ -40,19 +32,21 @@ function RelationSelect({
   const { data = [] } = useRows(field.relation!, {});
   const label = labelColumn[field.relation!] ?? "name";
   return (
-    <Select value={value || NONE} onValueChange={(v) => onChange(v === NONE ? "" : v)}>
-      <SelectTrigger id={field.name}>
-        <SelectValue placeholder="None" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={NONE}>None</SelectItem>
-        {data.map((row) => (
-          <SelectItem key={row["id"]} value={row["id"]}>
-            {row[label] ?? "Untitled"}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <select
+      id={field.name}
+      aria-label={field.label}
+      data-testid={`field-${field.name}`}
+      value={value || NONE}
+      onChange={(e) => onChange(e.target.value === NONE ? "" : e.target.value)}
+      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <option value={NONE}>None</option>
+      {data.map((row) => (
+        <option key={row["id"]} value={row["id"]}>
+          {row[label] ?? "Untitled"}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -150,7 +144,7 @@ export function EntityFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent data-testid="entity-form" className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{title ?? (record ? "Edit" : "New entry")}</DialogTitle>
           <DialogDescription>
@@ -172,26 +166,27 @@ export function EntityFormDialog({
                 {field.type === "textarea" ? (
                   <Textarea
                     id={field.name}
+                    aria-label={field.label}
+                    data-testid={`field-${field.name}`}
                     rows={3}
                     value={values[field.name] ?? ""}
                     onChange={(e) => setField(field.name, e.target.value)}
                   />
                 ) : field.type === "select" ? (
-                  <Select
+                  <select
+                    id={field.name}
+                    aria-label={field.label}
+                    data-testid={`field-${field.name}`}
                     value={values[field.name] || field.options?.[0] || ""}
-                    onValueChange={(v) => setField(field.name, v)}
+                    onChange={(e) => setField(field.name, e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                   >
-                    <SelectTrigger id={field.name}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {field.options?.map((o) => (
-                        <SelectItem key={o} value={o}>
-                          {o}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {field.options?.map((o) => (
+                      <option key={o} value={o}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
                 ) : field.type === "relation" ? (
                   <RelationSelect
                     field={field}
@@ -200,22 +195,28 @@ export function EntityFormDialog({
                   />
                 ) : field.type === "progress" ? (
                   <div className="flex items-center gap-4">
-                    <Slider
-                      value={[Number(values[field.name] ?? 0)]}
+                    <Input
+                      id={field.name}
+                      type="number"
                       min={0}
                       max={100}
                       step={5}
-                      onValueChange={([v]) => setField(field.name, v)}
-                      className="flex-1"
+                      aria-label={field.label}
+                      data-testid={`field-${field.name}`}
+                      value={Number(values[field.name] ?? 0)}
+                      onChange={(e) =>
+                        setField(field.name, e.target.value === "" ? 0 : Number(e.target.value))
+                      }
+                      className="w-24"
                     />
-                    <span className="w-12 text-right text-sm tabular-nums text-muted-foreground">
-                      {Number(values[field.name] ?? 0)}%
-                    </span>
+                    <span className="text-sm tabular-nums text-muted-foreground">%</span>
                   </div>
                 ) : field.type === "password" ? (
                   <div className="relative">
                     <Input
                       id={field.name}
+                      aria-label={field.label}
+                      data-testid={`field-${field.name}`}
                       type={revealed[field.name] ? "text" : "password"}
                       value={values[field.name] ?? ""}
                       placeholder={field.placeholder ?? "Hidden"}
@@ -239,6 +240,8 @@ export function EntityFormDialog({
                 ) : (
                   <Input
                     id={field.name}
+                    aria-label={field.label}
+                    data-testid={`field-${field.name}`}
                     type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
                     value={values[field.name] ?? ""}
                     placeholder={field.placeholder}
@@ -255,10 +258,14 @@ export function EntityFormDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            data-testid="form-cancel"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
-          <Button onClick={submit} disabled={save.isPending}>
+          <Button data-testid="form-save" onClick={submit} disabled={save.isPending}>
             {save.isPending ? "Saving…" : "Save"}
           </Button>
         </DialogFooter>

@@ -5,21 +5,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate, useRows, type Row } from "@/lib/db";
 import { getMember } from "@/lib/member";
@@ -60,6 +46,7 @@ export function ProspectFiles() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [projectId, setProjectId] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -71,8 +58,8 @@ export function ProspectFiles() {
     enabled: Boolean(projectId),
   });
 
-  async function addFile(file: File) {
-    if (!projectId) return;
+  async function addFile() {
+    if (!projectId || !file || uploading) return;
     if (!ALLOWED.test(file.name)) {
       toast.error("Formats acceptés : Word (.doc, .docx) ou Excel (.xls, .xlsx).");
       return;
@@ -97,12 +84,13 @@ export function ProspectFiles() {
       if (error) throw error;
 
       toast.success(`${file.name} ajouté`);
+      setFile(null);
+      if (inputRef.current) inputRef.current.value = "";
       await queryClient.invalidateQueries({ queryKey: [TABLE] });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Échec de l'ajout du fichier");
     } finally {
       setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -110,7 +98,9 @@ export function ProspectFiles() {
     setDeleting(String(row["id"]));
     try {
       await supabase.storage.from(BUCKET).remove([String(row["storage_path"] ?? "")]);
-      const { error } = await (supabase.from(TABLE as never) as any).delete().eq("id", row["id"]);
+      const { error } = await (supabase.from(TABLE as never) as any)
+        .delete()
+        .eq("id", row["id"]);
       if (error) throw error;
       toast.success("Fichier supprimé");
       await queryClient.invalidateQueries({ queryKey: [TABLE] });
@@ -129,43 +119,54 @@ export function ProspectFiles() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Select value={projectId} onValueChange={setProjectId}>
-            <SelectTrigger className="sm:w-72">
-              <SelectValue placeholder="Choisir un projet…" />
-            </SelectTrigger>
-            <SelectContent>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Projet SaaS</span>
+            <select
+              aria-label="Projet SaaS"
+              data-testid="prospect-project"
+              value={projectId}
+              onChange={(event) => setProjectId(event.target.value)}
+              className="h-9 w-full min-w-52 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <option value="">Choisir un projet…</option>
               {projects.map((project) => (
-                <SelectItem key={String(project["id"])} value={String(project["id"])}>
+                <option key={String(project["id"])} value={String(project["id"])}>
                   {String(project["project_name"] ?? "Sans nom")}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+            </select>
+          </label>
 
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT}
-            className="hidden"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void addFile(file);
-            }}
-          />
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              Fichier Word / Excel
+            </span>
+            <input
+              ref={inputRef}
+              type="file"
+              accept={ACCEPT}
+              aria-label="Fichier Word ou Excel"
+              data-testid="prospect-file"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              className="h-9 w-full min-w-56 cursor-pointer rounded-md border border-input bg-background px-2 text-sm file:mr-2 file:rounded file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs"
+            />
+          </label>
 
           <Button
             size="sm"
-            disabled={!projectId || uploading}
-            onClick={() => inputRef.current?.click()}
+            data-testid="prospect-add"
+            disabled={!projectId || !file || uploading}
+            onClick={() => void addFile()}
           >
             {uploading ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
             Ajouter
           </Button>
-          <span className="text-xs text-muted-foreground">
-            Word ou Excel (.doc, .docx, .xls, .xlsx)
-          </span>
         </div>
+
+        <p className="text-xs text-muted-foreground">
+          {file ? `Fichier sélectionné : ${file.name}` : ".doc, .docx, .xls ou .xlsx"}
+        </p>
 
         {!projectId ? (
           <p className="text-xs text-muted-foreground">
@@ -175,8 +176,7 @@ export function ProspectFiles() {
           <p className="text-xs text-muted-foreground">Chargement…</p>
         ) : files.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Aucun fichier pour ce projet. Cliquez sur « Ajouter » pour déposer une liste Word ou
-            Excel.
+            Aucun fichier pour ce projet. Choisissez un fichier puis cliquez sur « Ajouter ».
           </p>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
