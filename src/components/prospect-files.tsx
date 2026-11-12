@@ -47,7 +47,6 @@ export function ProspectFiles() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [projectId, setProjectId] = useState("");
-  const [projectName, setProjectName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState("");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -62,48 +61,15 @@ export function ProspectFiles() {
     enabled: Boolean(projectId),
   });
 
-  /**
-   * Resolves the project from either control. A typed name wins over the
-   * dropdown so automation never has to open the native select popup.
-   */
-  function resolveProjectChoice(): { id?: string; name: string; error?: string } {
-    const typed = projectName.trim();
-    if (typed) {
-      const match = projects.find(
-        (project) =>
-          String(project["project_name"] ?? "").trim().toLowerCase() === typed.toLowerCase(),
-      );
-      if (!match && !fileUrl.trim()) {
-        return { name: typed, error: `Aucun projet SaaS nommé « ${typed} ».` };
-      }
-      return { id: match ? String(match["id"]) : undefined, name: typed };
-    }
-    if (projectId) {
-      const match = projects.find((project) => String(project["id"]) === projectId);
-      return { id: projectId, name: String(match?.["project_name"] ?? "") };
-    }
-    return { name: "" };
-  }
-
   async function addFile() {
     if (uploading) return;
     const link = fileUrl.trim();
-    const choice = resolveProjectChoice();
-    const targetId = choice.id ?? "";
-    // Never fail silently: say what is missing instead of a dead grey button.
-    if (!choice.name) {
-      setResult({ ok: false, message: "Choisissez un projet SaaS (liste) ou tapez son nom." });
-      toast.error("Choisissez un projet SaaS dans la liste, ou tapez son nom.");
-      return;
-    }
-    if (choice.error) {
-      setResult({ ok: false, message: choice.error });
-      toast.error(choice.error);
-      return;
-    }
-    if (!link && !targetId) {
-      setResult({ ok: false, message: `Aucun projet SaaS nommé « ${choice.name} ».` });
-      toast.error(`Aucun projet SaaS nommé « ${choice.name} ».`);
+    // The project always comes from the existing SaaS projects list: nothing is
+    // typed or created here.
+    const targetId = projectId;
+    if (!targetId) {
+      setResult({ ok: false, message: "Sélectionnez un projet SaaS existant dans la liste." });
+      toast.error("Sélectionnez un projet SaaS existant dans la liste.");
       return;
     }
     if (!file && !link) {
@@ -130,8 +96,7 @@ export function ProspectFiles() {
           method: "POST",
           headers: { "content-type": "application/json", "x-access-code": ACCESS_CODE },
           body: JSON.stringify({
-            project_id: targetId || undefined,
-            project: targetId ? undefined : choice.name,
+            project_id: targetId,
             file_url: link,
             file_name: file?.name ?? undefined,
           }),
@@ -152,7 +117,6 @@ export function ProspectFiles() {
       }
 
       if (!file) return;
-      if (!targetId) throw new Error(`Aucun projet SaaS nommé « ${choice.name} ».`);
       const path = `${targetId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         upsert: false,
@@ -210,46 +174,47 @@ export function ProspectFiles() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">Projet SaaS</span>
-            <select
-              aria-label="Projet SaaS"
-              data-testid="prospect-project"
-              value={projectId}
-              onChange={(event) => {
-                setProjectId(event.target.value);
-                setProjectName("");
-                setResult(null);
-              }}
-              className="h-9 w-full min-w-52 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              <option value="">Choisir un projet…</option>
-              {projects.map((project) => (
-                <option key={String(project["id"])} value={String(project["id"])}>
-                  {String(project["project_name"] ?? "Sans nom")}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground">
-              …ou nom du projet (bots)
-            </span>
-            <input
-              type="text"
-              aria-label="Nom du projet SaaS"
-              data-testid="prospect-project-name"
-              placeholder="ex. m3ak"
-              value={projectName}
-              onChange={(event) => {
-                setProjectName(event.target.value);
-                if (event.target.value.trim()) setProjectId("");
-                setResult(null);
-              }}
-              className="h-9 w-full min-w-40 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            />
-          </label>
+          {/*
+            Radio buttons instead of a <select>: a native select opens an OS
+            popup that browser automation cannot click. Only existing SaaS
+            projects are offered, so nothing can be typed or invented.
+          */}
+          <fieldset
+            className="flex flex-col gap-1"
+            data-testid="prospect-projects"
+            aria-label="Projet SaaS"
+          >
+            <legend className="text-xs font-medium text-muted-foreground">Projet SaaS</legend>
+            {projects.length === 0 ? (
+              <span className="text-xs text-muted-foreground">
+                Aucun projet SaaS. Créez-en un dans SaaS Projects d'abord.
+              </span>
+            ) : (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
+                {projects.map((project) => {
+                  const id = String(project["id"]);
+                  const label = String(project["project_name"] ?? "Sans nom");
+                  return (
+                    <label key={id} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                      <input
+                        type="radio"
+                        name="prospect-project"
+                        value={id}
+                        data-testid={`prospect-project-${id}`}
+                        checked={projectId === id}
+                        onChange={() => {
+                          setProjectId(id);
+                          setResult(null);
+                        }}
+                        className="size-4 accent-primary"
+                      />
+                      <span>{label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </fieldset>
 
           <label className="flex flex-col gap-1">
             <span className="text-xs font-medium text-muted-foreground">
@@ -298,11 +263,11 @@ export function ProspectFiles() {
         </div>
 
         <p className="text-xs text-muted-foreground" data-testid="prospect-status">
-          {!projectId && !projectName.trim()
-            ? "Choisissez un projet SaaS (liste ou nom), puis un fichier ou un lien, puis cliquez sur « Ajouter »."
+          {!projectId
+            ? "Sélectionnez un projet SaaS existant, puis un fichier ou un lien, puis cliquez sur « Ajouter »."
             : file || fileUrl.trim()
-              ? `Projet : ${projectName.trim() || projects.find((p) => String(p["id"]) === projectId)?.["project_name"] || "—"} — fichier prêt, cliquez sur « Ajouter ».`
-              : `Projet : ${projectName.trim() || projects.find((p) => String(p["id"]) === projectId)?.["project_name"] || "—"}. Ajoutez maintenant un fichier ou un lien.`}
+              ? `Projet : ${projects.find((p) => String(p["id"]) === projectId)?.["project_name"] ?? "—"} — fichier prêt, cliquez sur « Ajouter ».`
+              : `Projet : ${projects.find((p) => String(p["id"]) === projectId)?.["project_name"] ?? "—"}. Ajoutez maintenant un fichier ou un lien.`}
         </p>
 
         {result ? (
