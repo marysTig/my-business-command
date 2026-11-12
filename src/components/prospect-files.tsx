@@ -45,6 +45,17 @@ function publicUrl(path: string) {
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+/**
+ * Word/Excel files cannot render natively in a browser, so a direct link would
+ * download them. Route the click through Microsoft's Office viewer instead, so
+ * the document opens in a new tab.
+ */
+function viewerUrl(path: string) {
+  if (!path) return "#";
+  const publicLink = publicUrl(path);
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(publicLink)}`;
+}
+
 export function ProspectFiles() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -187,7 +198,7 @@ export function ProspectFiles() {
                     <TableRow key={String(row["id"])}>
                       <TableCell>
                         <a
-                          href={path ? publicUrl(path) : "#"}
+                          href={viewerUrl(path)}
                           target="_blank"
                           rel="noreferrer noopener"
                           className="inline-flex items-center gap-2 text-sm font-medium hover:underline"

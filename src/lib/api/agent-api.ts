@@ -20,6 +20,9 @@
  *   GET    /api/research?section=   saved research reports (newest first)
  *   POST   /api/research            { section, question } -> runs research, saves a report
  *   POST   /api/research/:id/apply  writes that report's proposed record changes
+ *   GET    /api/prospect-files?project_id=|project=   Word/Excel files of a SaaS project
+ *   POST   /api/prospect-files      multipart: file + project_id or project -> uploads it
+ *   DELETE /api/prospect-files/:id  removes a prospect file
  *
  * Sections for research: tasks, customers, sales, cars, saas, websites, products,
  * resources, leads, properties, velora, expenses, team.
@@ -35,6 +38,11 @@ const RATE_LIMIT_PER_MINUTE = 60;
 const RATE_WINDOW_MS = 60_000;
 const MAX_BODY_BYTES = 32_000;
 const MAX_HISTORY = 20;
+
+const PROSPECT_TABLE = "saas_prospect_files";
+const PROSPECT_BUCKET = "prospect-lists";
+const PROSPECT_MAX_BYTES = 10 * 1024 * 1024;
+const PROSPECT_ALLOWED = /\.(docx?|xlsx?)$/i;
 
 class HttpError extends Error {
   status: number;
@@ -111,6 +119,219 @@ async function readJson(request: Request): Promise<Record<string, unknown>> {
     throw new HttpError(400, "Body must be a JSON object.");
   }
   return parsed as Record<string, unknown>;
+}
+
+/** Supabase connection used by the file endpoints (server side only). */
+function supabaseConfig(): { url: string; key: string } {
+  const url = env("SUPABASE_URL");
+  const key = env("SUPABASE_PUBLISHABLE_KEY");
+  if (!url || !key) {
+    throw new HttpError(500, "Supabase is not configured (SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY).");
+  }
+  return { url: url.replace(/\/+$/, ""), key };
+}
+
+function supabaseHeaders(key: string, extra: Record<string, string> = {}) {
+  return { apikey: key, authorization: `Bearer ${key}`, ...extra };
+}
+
+function prospectPublicUrl(url: string, path: string) {
+  return `${url}/storage/v1/object/public/${PROSPECT_BUCKET}/${path
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/")}`;
+}
+
+function prospectViewerUrl(publicLink: string) {
+  return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(publicLink)}`;
+}
+
+/** Resolves a SaaS project from ?project_id= (uuid) or ?project= (exact name). */
+async function resolveProject(input: {
+  projectId?: string;
+  projectName?: string;
+}): Promise<{ id: string; name: string }> {
+  const { url, key } = supabaseConfig();
+  const projectId = (input.projectId ?? "").trim();
+  const projectName = (input.projectName ?? "").trim();
+  if (!projectId && !projectName) {
+    throw new HttpError(400, "project_id (uuid) or project (name) is required.");
+  }
+
+  const query = projectId
+    ? `id=eq.${encodeURIComponent(projectId)}`
+    : `project_name=eq.${encodeURIComponent(projectName)}`;
+  const response = await fetch(
+    `${url}/rest/v1/saas_projects?select=id,project_name&${query}&limit=1`,
+    { headers: supabaseHeaders(key) },
+  );
+  if (!response.ok) {
+    throw new HttpError(500, `Could not read saas_projects: ${await response.text()}`);
+  }
+  const rows = (await response.json()) as Array<{ id: string; project_name?: string }>;
+  const row = rows[0];
+  if (!row) {
+    throw new HttpError(
+      404,
+      projectId ? `No SaaS project with id ${projectId}.` : `No SaaS project named "${projectName}".`,
+    );
+  }
+  return { id: String(row.id), name: String(row.project_name ?? projectName) };
+}
+
+async function listProspectFiles(url: URL): Promise<unknown[]> {
+  const { url: base, key } = supabaseConfig();
+  const project = await resolveProject({
+    projectId: url.searchParams.get("project_id") ?? "",
+    projectName: url.searchParams.get("project") ?? "",
+  });
+  const response = await fetch(
+    `${base}/rest/v1/${PROSPECT_TABLE}?select=*&saas_project_id=eq.${encodeURIComponent(project.id)}&order=created_at.desc`,
+    { headers: supabaseHeaders(key) },
+  );
+  if (!response.ok) {
+    throw new HttpError(500, `Could not read ${PROSPECT_TABLE}: ${await response.text()}`);
+  }
+  const rows = (await response.json()) as Array<Record<string, unknown>>;
+  return rows.map((row) => {
+    const path = String(row["storage_path"] ?? "");
+    const publicLink = path ? prospectPublicUrl(base, path) : "";
+    return {
+      id: row["id"],
+      project: project.name,
+      project_id: project.id,
+      file_name: row["file_name"],
+      file_type: row["file_type"],
+      file_size: row["file_size"],
+      created_at: row["created_at"],
+      viewer_url: publicLink ? prospectViewerUrl(publicLink) : null,
+      download_url: publicLink || null,
+    };
+  });
+}
+
+async function uploadProspectFile(request: Request): Promise<Response> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("multipart/form-data")) {
+    throw new HttpError(
+      415,
+      "Send multipart/form-data with a 'file' field plus 'project_id' or 'project'.",
+    );
+  }
+
+  const form = await request.formData();
+  const file = form.get("file");
+  if (!file || typeof (file as Blob).arrayBuffer !== "function") {
+    throw new HttpError(400, "file is required (multipart field named 'file').");
+  }
+  const upload = file as File;
+  const fileName = String(upload.name ?? "file");
+  if (!PROSPECT_ALLOWED.test(fileName)) {
+    throw new HttpError(400, "Only Word (.doc, .docx) or Excel (.xls, .xlsx) files are accepted.");
+  }
+  if (upload.size > PROSPECT_MAX_BYTES) {
+    throw new HttpError(413, "File is larger than 10 MB.");
+  }
+
+  const project = await resolveProject({
+    projectId: String(form.get("project_id") ?? ""),
+    projectName: String(form.get("project") ?? ""),
+  });
+
+  const { url, key } = supabaseConfig();
+  const safeName = fileName.replace(/[^\w.\- ()]/g, "_").slice(-120);
+  const path = `${project.id}/${Date.now()}-${safeName}`;
+  const bytes = await upload.arrayBuffer();
+
+  const put = await fetch(
+    `${url}/storage/v1/object/${PROSPECT_BUCKET}/${path
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")}`,
+    {
+      method: "POST",
+      headers: supabaseHeaders(key, {
+        "content-type": upload.type || "application/octet-stream",
+        "x-upsert": "false",
+      }),
+      body: bytes,
+    },
+  );
+  if (!put.ok) {
+    throw new HttpError(500, `Upload failed: ${await put.text()}`);
+  }
+
+  const insert = await fetch(`${url}/rest/v1/${PROSPECT_TABLE}`, {
+    method: "POST",
+    headers: supabaseHeaders(key, {
+      "content-type": "application/json",
+      prefer: "return=representation",
+    }),
+    body: JSON.stringify({
+      saas_project_id: project.id,
+      file_name: fileName,
+      file_type: upload.type || null,
+      file_size: upload.size,
+      storage_path: path,
+      created_by: "api",
+    }),
+  });
+  if (!insert.ok) {
+    await fetch(`${url}/storage/v1/object/${PROSPECT_BUCKET}/${path}`, {
+      method: "DELETE",
+      headers: supabaseHeaders(key),
+    });
+    throw new HttpError(500, `Could not save the file record: ${await insert.text()}`);
+  }
+
+  const publicLink = prospectPublicUrl(url, path);
+  const [row] = (await insert.json()) as Array<Record<string, unknown>>;
+  return json(
+    {
+      file: {
+        id: row?.["id"] ?? null,
+        project: project.name,
+        project_id: project.id,
+        file_name: fileName,
+        file_type: upload.type || null,
+        file_size: upload.size,
+        storage_path: path,
+        viewer_url: prospectViewerUrl(publicLink),
+        download_url: publicLink,
+      },
+    },
+    201,
+  );
+}
+
+async function deleteProspectFile(id: string): Promise<Response> {
+  const { url, key } = supabaseConfig();
+  const read = await fetch(
+    `${url}/rest/v1/${PROSPECT_TABLE}?select=storage_path&id=eq.${encodeURIComponent(id)}&limit=1`,
+    { headers: supabaseHeaders(key) },
+  );
+  if (!read.ok) throw new HttpError(500, `Could not read ${PROSPECT_TABLE}: ${await read.text()}`);
+  const rows = (await read.json()) as Array<{ storage_path?: string }>;
+  if (!rows[0]) throw new HttpError(404, `No prospect file with id ${id}.`);
+
+  const path = String(rows[0].storage_path ?? "");
+  if (path) {
+    await fetch(
+      `${url}/storage/v1/object/${PROSPECT_BUCKET}/${path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/")}`,
+      { method: "DELETE", headers: supabaseHeaders(key) },
+    );
+  }
+  const removed = await fetch(`${url}/rest/v1/${PROSPECT_TABLE}?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: supabaseHeaders(key),
+  });
+  if (!removed.ok) {
+    throw new HttpError(500, `Could not delete the file record: ${await removed.text()}`);
+  }
+  return json({ deleted: id });
 }
 
 async function runAgent(
@@ -193,8 +414,27 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
           "GET /api/research?section=",
           "POST /api/research",
           "POST /api/research/:id/apply",
+          "GET /api/prospect-files?project_id=|project=",
+          "POST /api/prospect-files",
+          "DELETE /api/prospect-files/:id",
         ],
       });
+    }
+
+    if (path === "/api/prospect-files") {
+      if (request.method === "GET") {
+        return json({ files: await listProspectFiles(url) });
+      }
+      if (request.method === "POST") {
+        return await uploadProspectFile(request);
+      }
+      throw new HttpError(405, "Use GET or POST.");
+    }
+
+    const prospectMatch = path.match(/^\/api\/prospect-files\/([^/]+)$/);
+    if (prospectMatch) {
+      if (request.method !== "DELETE") throw new HttpError(405, "Use DELETE.");
+      return await deleteProspectFile(decodeURIComponent(prospectMatch[1]));
     }
 
     if (path === "/api/overview") {
