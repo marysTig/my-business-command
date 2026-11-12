@@ -8,6 +8,7 @@ import {
   TABLE_NAMES,
   type TableName,
 } from "./schemas";
+import { webSearch } from "./web";
 
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 50;
@@ -361,12 +362,37 @@ export const tools: ToolDef[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "web_search",
+      description:
+        "Search the LIVE web for current information: news, prices, product releases, competitors, people, companies, regulations, anything that changed after your training data. Use it whenever the user asks to check online, or when an answer needs recent facts. Returns results with title, url, published date and a snippet — always cite the URLs you actually used. If the search key is not configured the tool returns a clear error; report that instead of guessing.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "What to look for, in natural language." },
+          num_results: { type: "integer", minimum: 1, maximum: 8 },
+        },
+        required: ["query"],
+      },
+    },
+  },
 ];
 
 export async function executeTool(
   name: string,
   args: Record<string, unknown>,
 ): Promise<unknown> {
+  // Web search needs no database access, so it runs before the client is built.
+  if (name === "web_search") {
+    const query = String(args["query"] ?? "").trim();
+    if (!query) throw new Error("query is required.");
+    const results = await webSearch(query, Number(args["num_results"] ?? 5));
+    if (results.length === 0) return { query, results: [], note: "No results found." };
+    return { query, results };
+  }
+
   const supabase = getClient();
 
   if (name === "get_dashboard_overview") {

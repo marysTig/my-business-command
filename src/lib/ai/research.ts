@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { chatCompletions } from "./client";
 import { TABLE_COLUMNS, isValidTable } from "./schemas";
 import { executeTool } from "./tools";
+import { webSearch as searchWeb, webSearchConfigured } from "./web";
 
 /**
  * Research assistant: one report per question, per dashboard section.
@@ -134,36 +135,12 @@ async function gatherSnapshot(section: ResearchSection): Promise<string> {
 
 /** Live web results. Returns an empty list when EXA_API_KEY is not configured. */
 async function webSearch(query: string, numResults = 4): Promise<ResearchSource[]> {
-  const apiKey = env("EXA_API_KEY");
-  if (!apiKey) return [];
+  if (!webSearchConfigured()) return [];
   try {
-    const response = await fetch("https://api.exa.ai/search", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": apiKey },
-      body: JSON.stringify({
-        query: query.slice(0, 400),
-        type: "auto",
-        numResults,
-        contents: { highlights: { numSentences: 2 } },
-      }),
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!response.ok) {
-      console.error("[research] exa failed:", response.status);
-      return [];
-    }
-    const data = (await response.json()) as {
-      results?: Array<{ title?: string | null; url?: string; highlights?: string[]; text?: string }>;
-    };
-    return (data.results ?? [])
-      .filter((item) => Boolean(item.url))
-      .map((item) => ({
-        title: item.title ?? item.url!,
-        url: item.url!,
-        snippet: item.highlights?.[0] ?? item.text?.slice(0, 300) ?? "",
-      }));
+    const results = await searchWeb(query, numResults);
+    return results.map((item) => ({ title: item.title, url: item.url, snippet: item.snippet }));
   } catch (error) {
-    console.error("[research] exa error:", error instanceof Error ? error.message : error);
+    console.error("[research] web search error:", error instanceof Error ? error.message : error);
     return [];
   }
 }
