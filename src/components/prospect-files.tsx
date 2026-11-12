@@ -47,6 +47,7 @@ export function ProspectFiles() {
   const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [projectId, setProjectId] = useState("");
+  const [projectName, setProjectName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState("");
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -61,13 +62,48 @@ export function ProspectFiles() {
     enabled: Boolean(projectId),
   });
 
+  /**
+   * Resolves the project from either control. A typed name wins over the
+   * dropdown so automation never has to open the native select popup.
+   */
+  function resolveProjectChoice(): { id?: string; name: string; error?: string } {
+    const typed = projectName.trim();
+    if (typed) {
+      const match = projects.find(
+        (project) =>
+          String(project["project_name"] ?? "").trim().toLowerCase() === typed.toLowerCase(),
+      );
+      if (!match && !fileUrl.trim()) {
+        return { name: typed, error: `Aucun projet SaaS nommé « ${typed} ».` };
+      }
+      return { id: match ? String(match["id"]) : undefined, name: typed };
+    }
+    if (projectId) {
+      const match = projects.find((project) => String(project["id"]) === projectId);
+      return { id: projectId, name: String(match?.["project_name"] ?? "") };
+    }
+    return { name: "" };
+  }
+
   async function addFile() {
     if (uploading) return;
     const link = fileUrl.trim();
+    const choice = resolveProjectChoice();
+    const targetId = choice.id ?? "";
     // Never fail silently: say what is missing instead of a dead grey button.
-    if (!projectId) {
-      setResult({ ok: false, message: "Choisissez d'abord un projet SaaS." });
-      toast.error("Choisissez d'abord un projet SaaS dans la liste.");
+    if (!choice.name) {
+      setResult({ ok: false, message: "Choisissez un projet SaaS (liste) ou tapez son nom." });
+      toast.error("Choisissez un projet SaaS dans la liste, ou tapez son nom.");
+      return;
+    }
+    if (choice.error) {
+      setResult({ ok: false, message: choice.error });
+      toast.error(choice.error);
+      return;
+    }
+    if (!link && !targetId) {
+      setResult({ ok: false, message: `Aucun projet SaaS nommé « ${choice.name} ».` });
+      toast.error(`Aucun projet SaaS nommé « ${choice.name} ».`);
       return;
     }
     if (!file && !link) {
@@ -94,7 +130,8 @@ export function ProspectFiles() {
           method: "POST",
           headers: { "content-type": "application/json", "x-access-code": ACCESS_CODE },
           body: JSON.stringify({
-            project_id: projectId,
+            project_id: targetId || undefined,
+            project: targetId ? undefined : choice.name,
             file_url: link,
             file_name: file?.name ?? undefined,
           }),
@@ -115,7 +152,8 @@ export function ProspectFiles() {
       }
 
       if (!file) return;
-      const path = `${projectId}/${Date.now()}-${file.name}`;
+      if (!targetId) throw new Error(`Aucun projet SaaS nommé « ${choice.name} ».`);
+      const path = `${targetId}/${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         upsert: false,
         contentType: file.type || undefined,
@@ -123,7 +161,7 @@ export function ProspectFiles() {
       if (uploadError) throw uploadError;
 
       const { error } = await (supabase.from(TABLE as never) as any).insert({
-        saas_project_id: projectId,
+        saas_project_id: targetId,
         file_name: file.name,
         file_type: file.type || null,
         file_size: file.size,
@@ -178,7 +216,11 @@ export function ProspectFiles() {
               aria-label="Projet SaaS"
               data-testid="prospect-project"
               value={projectId}
-              onChange={(event) => setProjectId(event.target.value)}
+              onChange={(event) => {
+                setProjectId(event.target.value);
+                setProjectName("");
+                setResult(null);
+              }}
               className="h-9 w-full min-w-52 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
             >
               <option value="">Choisir un projet…</option>
@@ -188,6 +230,25 @@ export function ProspectFiles() {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              …ou nom du projet (bots)
+            </span>
+            <input
+              type="text"
+              aria-label="Nom du projet SaaS"
+              data-testid="prospect-project-name"
+              placeholder="ex. m3ak"
+              value={projectName}
+              onChange={(event) => {
+                setProjectName(event.target.value);
+                if (event.target.value.trim()) setProjectId("");
+                setResult(null);
+              }}
+              className="h-9 w-full min-w-40 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            />
           </label>
 
           <label className="flex flex-col gap-1">
@@ -237,11 +298,11 @@ export function ProspectFiles() {
         </div>
 
         <p className="text-xs text-muted-foreground" data-testid="prospect-status">
-          {!projectId
-            ? "Choisissez un projet SaaS, puis un fichier .doc, .docx, .xls ou .xlsx, puis cliquez sur « Ajouter »."
-            : file
-              ? `Fichier sélectionné : ${file.name} — cliquez sur « Ajouter ».`
-              : "Projet choisi. Sélectionnez maintenant un fichier .doc, .docx, .xls ou .xlsx."}
+          {!projectId && !projectName.trim()
+            ? "Choisissez un projet SaaS (liste ou nom), puis un fichier ou un lien, puis cliquez sur « Ajouter »."
+            : file || fileUrl.trim()
+              ? `Projet : ${projectName.trim() || projects.find((p) => String(p["id"]) === projectId)?.["project_name"] || "—"} — fichier prêt, cliquez sur « Ajouter ».`
+              : `Projet : ${projectName.trim() || projects.find((p) => String(p["id"]) === projectId)?.["project_name"] || "—"}. Ajoutez maintenant un fichier ou un lien.`}
         </p>
 
         {result ? (
