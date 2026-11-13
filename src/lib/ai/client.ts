@@ -7,8 +7,12 @@
 // Env (never VITE_-prefixed, never shipped to the browser):
 //   ZAI_API_KEY      first key slot
 //   ZAI_API_KEY_2    second key slot (optional)
+//   ZAI_API_KEY_3    third key slot (optional) — may be another provider
 //   ZAI_API_BASE     default https://api.z.ai/api/paas/v4
 //   ZAI_MODEL        default glm-4.6
+// Slots are round-robin with cooldown failover, so a free Groq key
+// (ZAI_API_BASE_3=https://api.groq.com/openai/v1, ZAI_MODEL_3=openai/gpt-oss-120b)
+// can sit next to the Gemini slots and add its own daily quota.
 //   ZAI_MODEL_FALLBACK  comma-separated extra models tried when one is out of
 //                       quota (429) — each Gemini model has its own daily limit
 // Per-slot overrides ZAI_API_BASE_2 / ZAI_MODEL_2 let the second key point at
@@ -19,6 +23,7 @@ type Slot = {
   base: string;
   key: string;
   model: string;
+  fallback?: boolean;
 };
 
 function env(name: string): string | undefined {
@@ -40,15 +45,16 @@ function readSlots(): Slot[] {
     .map((m) => m.trim())
     .filter(Boolean);
   const slots: Slot[] = [];
-  const first = env("ZAI_API_KEY");
-  if (first) slots.push({ id: "key-1", base, key: first, model });
-  const second = env("ZAI_API_KEY_2");
-  if (second) {
+  // Slot suffixes: "" = first, "_2", "_3" — each may point at another provider
+  // (e.g. Groq's free gpt-oss-120b) through its own base + model.
+  for (const [index, suffix] of ["", "_2", "_3"].entries()) {
+    const key = env(`ZAI_API_KEY${suffix}`);
+    if (!key) continue;
     slots.push({
-      id: "key-2",
-      base: env("ZAI_API_BASE_2") ?? base,
-      key: second,
-      model: env("ZAI_MODEL_2") ?? model,
+      id: `key-${index + 1}`,
+      base: env(`ZAI_API_BASE${suffix}`) ?? base,
+      key,
+      model: env(`ZAI_MODEL${suffix}`) ?? model,
     });
   }
   if (slots.length === 0) {
@@ -58,7 +64,9 @@ function readSlots(): Slot[] {
   }
   return slots.flatMap((slot) => {
     const models = [...new Set([slot.model, ...fallbacks])];
-    return models.map((m) => ({ ...slot, id: `${slot.id}:${m}`, model: m }));
+    // The first model of a slot is its primary; the rest only serve as overflow
+    // once every primary is rate-limited, so quality stays consistent.
+    return models.map((m, index) => ({ ...slot, id: `${slot.id}:${m}`, model: m, fallback: index > 0 }));
   });
 }
 
@@ -67,12 +75,22 @@ function readSlots(): Slot[] {
 let cursor = 0;
 const cooldownUntil = new Map<string, number>();
 
+function rotate<T>(list: T[], start: number): T[] {
+  if (list.length === 0) return [];
+  const s = start % list.length;
+  return [...list.slice(s), ...list.slice(0, s)];
+}
+
 function orderedSlots(slots: Slot[]): Slot[] {
-  const start = cursor % slots.length;
-  const ordered = [...slots.slice(start), ...slots.slice(0, start)];
   const now = Date.now();
-  const fresh = ordered.filter((s) => (cooldownUntil.get(s.id) ?? 0) <= now);
-  return fresh.length > 0 ? fresh : ordered;
+  const fresh = slots.filter((s) => (cooldownUntil.get(s.id) ?? 0) <= now);
+  const pool = fresh.length > 0 ? fresh : slots;
+  const primary = pool.filter((s) => !s.fallback);
+  const fallback = pool.filter((s) => s.fallback);
+  // Primaries first (round-robin), overflow models only if none is available.
+  return primary.length > 0
+    ? [...rotate(primary, cursor), ...rotate(fallback, cursor)]
+    : rotate(fallback, cursor);
 }
 
 function coolDown(slot: Slot, status: number) {
