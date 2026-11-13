@@ -125,8 +125,8 @@ async function sendReply(chatId, text) {
 async function askAssistant(chatId, question) {
   const history = histories.get(chatId) ?? [];
   history.push({ role: "user", content: question });
-  // Keep the last 8 messages (system prompt is prepended each turn).
-  while (history.length > 8) history.shift();
+  // Keep the last 16 messages (system prompt is prepended each turn).
+  while (history.length > 16) history.shift();
 
   const reply = await runLoop(
     [{ role: "system", content: SYSTEM_PROMPT }, ...history],
