@@ -49,3 +49,6 @@ supabase/new-project/
 # Telegram bot runtime state
 .telegram-bot.log
 .telegram-bot-state.json
+
+# Build artefacts
+.build-log.txt

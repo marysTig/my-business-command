@@ -281,7 +281,8 @@ export type ColumnName = (typeof TABLE_COLUMNS)[keyof typeof TABLE_COLUMNS][numb
 export const TABLE_NAMES = Object.keys(TABLE_COLUMNS) as TableName[];
 
 export function isValidTable(value: unknown): value is TableName {
-  return typeof value === "string" && value in TABLE_COLUMNS;
+  // Own keys only: "in" would also accept "__proto__" and friends.
+  return typeof value === "string" && Object.hasOwn(TABLE_COLUMNS, value);
 }
 
 export function isValidColumn(table: TableName, value: unknown): value is string {
