@@ -94,43 +94,77 @@ function orderedSlots(slots: Slot[]): Slot[] {
 }
 
 function coolDown(slot: Slot, status: number) {
-  cooldownUntil.set(slot.id, Date.now() + (status === 429 ? 60_000 : 30_000));
+  // Quota errors clear slowly; empty/stalled answers recover in seconds, so a
+  // short cooldown keeps the fast provider in rotation.
+  cooldownUntil.set(slot.id, Date.now() + (status === 429 ? 60_000 : 15_000));
 }
 
-export async function chatCompletions(payload: Record<string, unknown>) {
+export async function chatCompletions(
+  payload: Record<string, unknown>,
+  preferredSlot?: string,
+) {
   const slots = readSlots();
   const order = orderedSlots(slots);
   cursor = (cursor + 1) % slots.length;
+  // Stay on the same key/model for a whole conversation turn: providers format
+  // their tool calls differently, so switching mid-loop breaks the payload.
+  if (preferredSlot) {
+    const index = order.findIndex((s) => s.id === preferredSlot);
+    if (index > 0) order.unshift(...order.splice(index, 1));
+  }
 
   let lastStatus = 0;
   for (const slot of order) {
-    let response: Response;
-    try {
-      response = await fetch(`${slot.base}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${slot.key}`,
-        },
-        body: JSON.stringify({ ...payload, model: slot.model }),
-        // A stalled upstream must fail over, not hang the bot forever.
-        signal: AbortSignal.timeout(45_000),
-      });
-    } catch {
-      // Network-level failure or timeout: try the next key/model.
-      coolDown(slot, 502);
-      continue;
+    // Free providers now and then answer with an empty completion; retry the
+    // same slot once before cooling it down and moving to the next provider.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let response: Response;
+      try {
+        response = await fetch(`${slot.base}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${slot.key}`,
+          },
+          body: JSON.stringify({ ...payload, model: slot.model }),
+          // A stalled upstream must fail over quickly, not hang the bot.
+          signal: AbortSignal.timeout(25_000),
+        });
+      } catch {
+        // Network-level failure or timeout: try the next key/model.
+        coolDown(slot, 502);
+        break;
+      }
+      if (response.status === 429 || response.status >= 500) {
+        lastStatus = response.status;
+        coolDown(slot, response.status);
+        break;
+      }
+      if (!response.ok) {
+        // Any provider-specific rejection (bad payload, model not enabled) is a
+        // reason to try the next slot, not to fail the whole request.
+        lastStatus = response.status;
+        const body = await response.text().catch(() => "");
+        console.error(`[ai] ${slot.id} -> ${response.status} ${body.slice(0, 200)}`);
+        coolDown(slot, 502);
+        break;
+      }
+      const data = (await response.json()) as {
+        choices?: Array<{
+          message?: { content?: unknown; tool_calls?: unknown[] };
+        }>;
+      };
+      const message = data.choices?.[0]?.message;
+      const hasText = typeof message?.content === "string" && message.content.trim().length > 0;
+      const hasCalls = Array.isArray(message?.tool_calls) && message.tool_calls.length > 0;
+      if (message && !hasText && !hasCalls) {
+        lastStatus = 502;
+        if (attempt === 0) continue;
+        coolDown(slot, 502);
+        break;
+      }
+      return { slot: slot.id, data };
     }
-    if (response.status === 429 || response.status >= 500) {
-      lastStatus = response.status;
-      coolDown(slot, response.status);
-      continue;
-    }
-    if (!response.ok) {
-      throw new Error(`AI request failed (status ${response.status}, slot ${slot.id}).`);
-    }
-    const data = await response.json();
-    return { slot: slot.id, data };
   }
   throw new Error(`All AI keys failed (last status ${lastStatus}).`);
 }
@@ -143,9 +177,35 @@ export type ToolDef = {
 export type Message = {
   role: string;
   content?: unknown;
-  tool_calls?: Array<{ id: string; function: { name: string; arguments?: string } }>;
+  tool_calls?: Array<{
+    id: string;
+    type?: string;
+    function: { name: string; arguments?: string };
+  }>;
   tool_call_id?: string;
+  [key: string]: unknown;
 };
+
+/**
+ * Keeps only the fields the OpenAI wire format defines. Providers add their own
+ * extras (e.g. NVIDIA's reasoning_content, Gemini's thought_signature) and
+ * another provider rejects them, so a message is never replayed as-is.
+ */
+function cleanMessage(message: Message): Message {
+  const out: Message = {
+    role: String(message.role ?? "assistant"),
+    content: typeof message.content === "string" ? message.content : (message.content ?? null),
+  };
+  if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
+    out.tool_calls = message.tool_calls.map((call) => ({
+      id: call.id,
+      type: "function",
+      function: { name: call.function.name, arguments: call.function.arguments ?? "{}" },
+    }));
+  }
+  if (message.tool_call_id) out.tool_call_id = message.tool_call_id;
+  return out;
+}
 
 /**
  * Runs the tool-calling loop: ask the model, execute any requested tools with
@@ -160,19 +220,32 @@ export async function runLoop(
   execute: (name: string, args: Record<string, unknown>) => Promise<unknown>,
   maxRounds = 10,
 ): Promise<Message> {
-  let convo: Message[] = [...messages];
+  let convo: Message[] = messages.map(cleanMessage);
+  let pinned: string | undefined;
   for (let round = 0; round < maxRounds; round++) {
-    const { data } = await chatCompletions({
-      messages: convo,
-      tools,
-      tool_choice: "auto",
-      temperature: 0.2,
-    });
+    const { data, slot } = await chatCompletions(
+      {
+        messages: convo,
+        tools,
+        tool_choice: "auto",
+        temperature: 0.2,
+      },
+      pinned,
+    );
+    pinned = slot;
     const message = (data as { choices?: Array<{ message?: Message }> }).choices?.[0]?.message;
     if (!message) throw new Error("AI returned an empty response.");
-    convo = [...convo, message];
+    convo = [...convo, cleanMessage(message)];
     const calls = message.tool_calls ?? [];
-    if (calls.length === 0) return message;
+    if (calls.length === 0) {
+      if (String(message.content ?? "").trim().length > 0) return message;
+      // Empty answer: ask once more for plain text instead of showing nothing.
+      if (round < maxRounds - 1) {
+        convo.push({ role: "system", content: "Your previous reply was empty. Answer the user's question in plain text." });
+        continue;
+      }
+      throw new Error("AI returned an empty answer.");
+    }
     for (const call of calls) {
       let args: Record<string, unknown> = {};
       try {
@@ -180,7 +253,17 @@ export async function runLoop(
       } catch {
         args = {};
       }
-      const result = await execute(call.function.name, args);
+      // A failed tool is fed back as data, not thrown: the model can read the
+      // error (wrong column, bad filter) and correct itself in the same turn.
+      let result: unknown;
+      try {
+        result = await execute(call.function.name, args);
+      } catch (error) {
+        result = {
+          error: error instanceof Error ? error.message : String(error),
+          hint: "The call failed. Fix the arguments (real column names come from describe_table) and try again, or explain the failure to the user.",
+        };
+      }
       convo.push({
         role: "tool",
         tool_call_id: call.id,
@@ -195,7 +278,7 @@ export async function runLoop(
     content:
       "You have used all of your tool calls. Give your final answer now using only the data you have already collected. Do not call any tools.",
   });
-  const { data } = await chatCompletions({ messages: convo, temperature: 0.2 });
+  const { data } = await chatCompletions({ messages: convo.map(cleanMessage), temperature: 0.2 }, pinned);
   const message = (data as { choices?: Array<{ message?: Message }> }).choices?.[0]?.message;
   if (!message) throw new Error("AI returned an empty response.");
   return message;
