@@ -23,7 +23,6 @@ function CarsPage() {
   return (
     <CrudPage
       table="car_buyers"
-      researchSection="cars"
       title="Car Buyers"
       description="Clients interested in buying a car, with their contact details and visit date."
       statusField="status"

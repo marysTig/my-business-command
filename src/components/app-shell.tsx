@@ -12,6 +12,7 @@ import {
   Package,
   Search,
   Settings,
+  Sparkles,
   Users,
   Wallet,
 } from "lucide-react";
@@ -29,6 +30,7 @@ import { setMember, useMember } from "@/lib/member";
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, testId: "nav-tasks" },
+  { to: "/research", label: "Recherches", icon: Sparkles, testId: "nav-research" },
   { to: "/websites", label: "Client Websites", icon: Globe, testId: "nav-websites" },
   {
     to: "/saas",

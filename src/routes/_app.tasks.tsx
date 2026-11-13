@@ -9,10 +9,9 @@ import { EmptyState } from "@/components/empty-state";
 import { EntityFormDialog } from "@/components/entity-form";
 import { LoadingRows } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
-import { SectionResearch } from "@/components/section-research";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDate, useDeleteRow, useRows, useSaveRow, type Row } from "@/lib/db";
 import { TASK_BOARD_STATUSES, TASK_PRIORITIES, TASK_STATUSES } from "@/lib/entities";
@@ -314,8 +313,6 @@ function TasksPage() {
           setDeleting(null);
         }}
       />
-
-      <SectionResearch section="tasks" />
     </>
   );
 }

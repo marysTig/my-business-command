@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppExpensesRouteImport } from './routes/_app.expenses'
+import { Route as AppResearchRouteImport } from './routes/_app.research'
 import { Route as AppResourcesRouteImport } from './routes/_app.resources'
 import { Route as AppSearchRouteImport } from './routes/_app.search'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -47,6 +48,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppExpensesRoute = AppExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppResearchRoute = AppResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
   getParentRoute: () => AppRoute,
 } as any)
 const AppResourcesRoute = AppResourcesRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
+  '/research': typeof AppResearchRoute
   '/resources': typeof AppResourcesRoute
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AppDashboardRoute
   '/expenses': typeof AppExpensesRoute
+  '/research': typeof AppResearchRoute
   '/resources': typeof AppResourcesRoute
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRoute
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/expenses': typeof AppExpensesRoute
+  '/_app/research': typeof AppResearchRoute
   '/_app/resources': typeof AppResourcesRoute
   '/_app/search': typeof AppSearchRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/expenses'
+    | '/research'
     | '/resources'
     | '/search'
     | '/settings'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/expenses'
+    | '/research'
     | '/resources'
     | '/search'
     | '/settings'
@@ -244,6 +255,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/dashboard'
     | '/_app/expenses'
+    | '/_app/research'
     | '/_app/resources'
     | '/_app/search'
     | '/_app/settings'
@@ -295,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/expenses'
       fullPath: '/expenses'
       preLoaderRoute: typeof AppExpensesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/research': {
+      id: '/_app/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof AppResearchRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/resources': {
@@ -415,6 +434,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppExpensesRoute: typeof AppExpensesRoute
+  AppResearchRoute: typeof AppResearchRoute
   AppResourcesRoute: typeof AppResourcesRoute
   AppSearchRoute: typeof AppSearchRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -436,6 +456,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppExpensesRoute: AppExpensesRoute,
+  AppResearchRoute: AppResearchRoute,
   AppResourcesRoute: AppResourcesRoute,
   AppSearchRoute: AppSearchRoute,
   AppSettingsRoute: AppSettingsRoute,

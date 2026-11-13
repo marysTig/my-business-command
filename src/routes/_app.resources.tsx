@@ -58,7 +58,6 @@ function ResourcesPage() {
   return (
     <CrudPage
       table="resources"
-      researchSection="resources"
       title="Resources"
       description="Inspiration, docs and tools, attached to the work they serve."
       statusField="category"

@@ -155,7 +155,6 @@ function CustomersPage() {
       <TabsContent value="customers" className="space-y-6">
         <CrudPage
           table="customers"
-      researchSection="customers"
           title="Customers"
           description="Who bought what, and whether their access is still active."
           statusField="access_status"
