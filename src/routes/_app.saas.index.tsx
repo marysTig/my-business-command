@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
-import { ProspectFiles } from "@/components/prospect-files";
 import { StatusBadge } from "@/components/status-badge";
 import { Progress } from "@/components/ui/progress";
 import { formatDate } from "@/lib/db";
@@ -25,6 +24,8 @@ export const Route = createFileRoute("/_app/saas/")({
 });
 
 function SaasPage() {
+  // The prospection files live in their own sub-section (/saas/prospects),
+  // reachable from the folded "SaaS Projects" entry of the sidebar.
   return (
     <>
       <CrudPage
@@ -53,7 +54,6 @@ function SaasPage() {
           { key: "target_date", header: "Target", render: (r) => formatDate(r["target_date"]) },
         ]}
       />
-      <ProspectFiles />
     </>
   );
 }

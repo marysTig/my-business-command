@@ -24,6 +24,7 @@ import { Route as AppProductsIndexRouteImport } from './routes/_app.products.ind
 import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
 import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
 import { Route as AppSaasIdRouteImport } from './routes/_app.saas.$id'
+import { Route as AppSaasProspectsRouteImport } from './routes/_app.saas.prospects'
 import { Route as AppVeloraIndexRouteImport } from './routes/_app.velora.index'
 import { Route as AppVeloraIdRouteImport } from './routes/_app.velora.$id'
 import { Route as AppWebsitesIndexRouteImport } from './routes/_app.websites.index'
@@ -103,6 +104,11 @@ const AppSaasIdRoute = AppSaasIdRouteImport.update({
   path: '/saas/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSaasProspectsRoute = AppSaasProspectsRouteImport.update({
+  id: '/saas/prospects',
+  path: '/saas/prospects',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppVeloraIndexRoute = AppVeloraIndexRouteImport.update({
   id: '/velora/',
   path: '/velora/',
@@ -135,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/customers/$id': typeof AppCustomersIdRoute
   '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
+  '/saas/prospects': typeof AppSaasProspectsRoute
   '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/cars/': typeof AppCarsIndexRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/customers/$id': typeof AppCustomersIdRoute
   '/products/$id': typeof AppProductsIdRoute
   '/saas/$id': typeof AppSaasIdRoute
+  '/saas/prospects': typeof AppSaasProspectsRoute
   '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
   '/cars': typeof AppCarsIndexRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/products/$id': typeof AppProductsIdRoute
   '/_app/saas/$id': typeof AppSaasIdRoute
+  '/_app/saas/prospects': typeof AppSaasProspectsRoute
   '/_app/velora/$id': typeof AppVeloraIdRoute
   '/_app/websites/$id': typeof AppWebsitesIdRoute
   '/_app/cars/': typeof AppCarsIndexRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/products/$id'
     | '/saas/$id'
+    | '/saas/prospects'
     | '/velora/$id'
     | '/websites/$id'
     | '/cars/'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/customers/$id'
     | '/products/$id'
     | '/saas/$id'
+    | '/saas/prospects'
     | '/velora/$id'
     | '/websites/$id'
     | '/cars'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '/_app/customers/$id'
     | '/_app/products/$id'
     | '/_app/saas/$id'
+    | '/_app/saas/prospects'
     | '/_app/velora/$id'
     | '/_app/websites/$id'
     | '/_app/cars/'
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSaasIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/saas/prospects': {
+      id: '/_app/saas/prospects'
+      path: '/saas/prospects'
+      fullPath: '/saas/prospects'
+      preLoaderRoute: typeof AppSaasProspectsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/velora/': {
       id: '/_app/velora/'
       path: '/velora'
@@ -403,6 +422,7 @@ interface AppRouteChildren {
   AppCustomersIdRoute: typeof AppCustomersIdRoute
   AppProductsIdRoute: typeof AppProductsIdRoute
   AppSaasIdRoute: typeof AppSaasIdRoute
+  AppSaasProspectsRoute: typeof AppSaasProspectsRoute
   AppVeloraIdRoute: typeof AppVeloraIdRoute
   AppWebsitesIdRoute: typeof AppWebsitesIdRoute
   AppCarsIndexRoute: typeof AppCarsIndexRoute
@@ -423,6 +443,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCustomersIdRoute: AppCustomersIdRoute,
   AppProductsIdRoute: AppProductsIdRoute,
   AppSaasIdRoute: AppSaasIdRoute,
+  AppSaasProspectsRoute: AppSaasProspectsRoute,
   AppVeloraIdRoute: AppVeloraIdRoute,
   AppWebsitesIdRoute: AppWebsitesIdRoute,
   AppCarsIndexRoute: AppCarsIndexRoute,
