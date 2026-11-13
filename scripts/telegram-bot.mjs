@@ -13,6 +13,8 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
+import { stripTags, toTelegramHtml } from "../src/lib/telegram-format.ts";
+
 const ENV_FILES = ["../.env.local", "../.env"];
 for (const file of ENV_FILES) {
   try {
@@ -109,35 +111,61 @@ function saveHistories() {
   }
 }
 
-// ---------- Telegram formatting: model markdown -> Telegram HTML ----------
-function toTelegramHtml(text) {
-  let out = String(text);
-  out = out
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/^###\s+(.+)$/gm, "<b>$1</b>")
-    .replace(/^##\s+(.+)$/gm, "<b>$1</b>");
-  return out;
+// ---------- Telegram presentation ----------
+// A persistent keyboard gives the user tappable shortcuts; every button just
+// sends a slash command, so a bot can keep driving the same actions.
+const KEYBOARD = {
+  keyboard: [
+    ["📊 Vue business", "✅ Tâches"],
+    ["💼 Projets SaaS", "🔎 Recherche web"],
+    ["🧾 Dépenses", "❓ Aide"],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+  input_field_placeholder: "Pose une question ou choisis une action…",
+};
+
+const BUTTON_COMMANDS = new Map([
+  ["📊 Vue business", "/overview"],
+  ["✅ Tâches", "/tasks"],
+  ["💼 Projets SaaS", "/projects"],
+  ["🔎 Recherche web", "/search"],
+  ["🧾 Dépenses", "/expenses"],
+  ["❓ Aide", "/help"],
+]);
+
+function splitMessage(text, limit = 3900) {
+  const parts = [];
+  let rest = String(text ?? "");
+  while (rest.length > limit) {
+    const lineBreak = rest.lastIndexOf("\n", limit);
+    const cut = lineBreak > 1000 ? lineBreak : limit;
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut).replace(/^\n+/, "");
+  }
+  if (rest.length > 0) parts.push(rest);
+  return parts.length > 0 ? parts : ["…"];
 }
 
-async function sendReply(chatId, text) {
-  const parts = [];
-  while (text.length > 3900) {
-    const cut = text.lastIndexOf("\n", 3900);
-    parts.push(text.slice(0, cut > 1000 ? cut : 3900));
-    text = text.slice(cut > 1000 ? cut + 1 : 3900);
-  }
-  parts.push(text);
-  for (const part of parts) {
-    await tg("sendMessage", {
-      chat_id: chatId,
-      text: part,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    });
+async function sendReply(chatId, text, options = {}) {
+  const shared = {
+    chat_id: chatId,
+    disable_web_page_preview: true,
+    ...(options.replyTo
+      ? { reply_parameters: { message_id: options.replyTo, allow_sending_without_reply: true } }
+      : {}),
+    ...(options.keyboard ? { reply_markup: options.keyboard } : {}),
+  };
+
+  for (const part of splitMessage(text)) {
+    try {
+      await tg("sendMessage", { ...shared, text: part, parse_mode: "HTML" });
+    } catch (error) {
+      // Telegram rejects an entire message if a single tag is malformed, so the
+      // same content is resent as plain text instead of being lost.
+      console.error(`[${chatId}] HTML rejected, retrying as text: ${error.message}`);
+      await tg("sendMessage", { ...shared, text: stripTags(part) });
+    }
   }
 }
 
@@ -160,13 +188,27 @@ async function askAssistant(chatId, question) {
   return text;
 }
 
-const HELP = `I am your My Business OS assistant on Telegram.
-Ask me anything about your tasks, customers, sales, projects — or tell me to add/move a task.
-Commands:
-/overview  business overview (KPIs, alerts, deadlines)
-/reset     forget this conversation
-/help      show this message
-In a group I only answer commands and @mentions.`;
+const HELP = [
+  "<b>🤖 Assistant My Business OS</b>",
+  "",
+  "Je réponds sur tes <b>tâches</b>, <b>clients</b>, <b>ventes</b> et <b>projets</b> — et je peux ajouter ou modifier des choses pour toi.",
+  "",
+  "<b>Raccourcis</b>",
+  "/overview — 📊 vue business (KPI, alertes, échéances)",
+  "/tasks — ✅ tâches par statut",
+  "/customers — 👥 clients",
+  "/projects — 💼 projets SaaS",
+  "/sales — 💰 ventes et impayés",
+  "/expenses — 🧾 dépenses du mois",
+  "/prospects — 📎 fichiers de prospection",
+  "/research — 🔬 recherches",
+  "/add <i>chose</i> — ➕ ajouter",
+  "/edit <i>chose</i> — ✏️ modifier",
+  "/search <i>sujet</i> — 🔎 recherche web",
+  "/reset — 🧹 oublier la conversation",
+  "",
+  "<i>Tu peux aussi écrire normalement. En groupe je ne réponds qu'aux commandes et aux @mentions.</i>",
+].join("\n");
 
 // Every power of the bot, as a Telegram command. Registered with setMyCommands
 // so typing "/" in Telegram shows this list, and printed by /commands too.
@@ -216,6 +258,10 @@ async function handleMessage(msg) {
     !BOT_USERNAME || target.toLowerCase() === BOT_USERNAME ? `/${cmd}` : full,
   );
 
+  // Keyboard buttons send their label as a message; treat it as its command.
+  const buttonCommand = BUTTON_COMMANDS.get(text);
+  if (buttonCommand) text = buttonCommand;
+
   const senderId = String(msg.from?.id ?? "");
   const mentioned = BOT_USERNAME ? text.toLowerCase().includes(`@${BOT_USERNAME}`) : false;
   const isCommand = text.startsWith("/");
@@ -245,7 +291,12 @@ async function handleMessage(msg) {
 
   // A lone "/" shows every power of the bot as a list to pick from.
   if (text === "/" || text === "/commands" || text.startsWith("/start") || text.startsWith("/help")) {
-    await sendReply(chatId, `${HELP}\n\n<b>Mes commandes</b>\n${commandsList()}`);
+    const isStart = text.startsWith("/start");
+    await sendReply(
+      chatId,
+      isStart ? `${HELP}\n\n<b>Commandes</b>\n${commandsList()}` : `<b>Mes commandes</b>\n${commandsList()}`,
+      { keyboard: KEYBOARD, replyTo: msg.message_id },
+    );
     return;
   }
 
@@ -291,7 +342,7 @@ async function handleMessage(msg) {
   try {
     const answer = await askAssistant(chatId, question);
     stopTyping = true;
-    await sendReply(chatId, toTelegramHtml(answer));
+    await sendReply(chatId, toTelegramHtml(answer), { replyTo: msg.message_id });
     console.log(`[${chatId}] replied, ${answer.length} chars`);
   } catch (err) {
     stopTyping = true;
@@ -315,6 +366,19 @@ try {
   console.log(`registered ${COMMANDS.length} commands (type / in Telegram to see them)`);
 } catch (err) {
   console.error(`could not register commands: ${err.message}`);
+}
+
+// Bot profile text shown before the first message.
+try {
+  await tg("setMyShortDescription", {
+    short_description: "Assistant My Business OS : business, ventes, tâches. Écris / pour voir mes commandes.",
+  });
+  await tg("setMyDescription", {
+    description:
+      "Assistant de ton dashboard My Business OS. Pose une question en français, ou utilise /overview, /tasks, /projects, /search…",
+  });
+} catch (err) {
+  console.error(`could not update the bot description: ${err.message}`);
 }
 
 console.log(
