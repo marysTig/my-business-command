@@ -74,6 +74,7 @@ function readSlots(): Slot[] {
 // instance, and for two keys the failover matters more than perfect spread).
 let cursor = 0;
 const cooldownUntil = new Map<string, number>();
+const failures = new Map<string, number>();
 
 function rotate<T>(list: T[], start: number): T[] {
   if (list.length === 0) return [];
@@ -94,9 +95,18 @@ function orderedSlots(slots: Slot[]): Slot[] {
 }
 
 function coolDown(slot: Slot, status: number) {
-  // Quota errors clear slowly; empty/stalled answers recover in seconds, so a
-  // short cooldown keeps the fast provider in rotation.
-  cooldownUntil.set(slot.id, Date.now() + (status === 429 ? 60_000 : 15_000));
+  // Repeated failures back off exponentially (15s, 30s, 60s … max 5 min), so a
+  // provider that is down costs one timeout instead of stalling every turn.
+  const count = (failures.get(slot.id) ?? 0) + 1;
+  failures.set(slot.id, count);
+  const base = status === 429 ? 60_000 : 15_000;
+  const wait = Math.min(base * 2 ** (count - 1), 300_000);
+  cooldownUntil.set(slot.id, Date.now() + wait);
+}
+
+function noteSuccess(slot: Slot) {
+  failures.delete(slot.id);
+  cooldownUntil.delete(slot.id);
 }
 
 export async function chatCompletions(
@@ -163,6 +173,7 @@ export async function chatCompletions(
         coolDown(slot, 502);
         break;
       }
+      noteSuccess(slot);
       return { slot: slot.id, data };
     }
   }
@@ -180,6 +191,7 @@ export type Message = {
   tool_calls?: Array<{
     id: string;
     type?: string;
+    extra_content?: unknown;
     function: { name: string; arguments?: string };
   }>;
   tool_call_id?: string;
@@ -197,13 +209,20 @@ function cleanMessage(message: Message): Message {
     content: typeof message.content === "string" ? message.content : (message.content ?? null),
   };
   if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
-    out.tool_calls = message.tool_calls.map((call) => ({
-      id: call.id,
-      type: "function",
-      function: { name: call.function.name, arguments: call.function.arguments ?? "{}" },
-    }));
+    out.tool_calls = message.tool_calls.map((call) => {
+      const cleaned: NonNullable<Message["tool_calls"]>[number] = {
+        id: call.id,
+        type: "function",
+        function: { name: call.function.name, arguments: call.function.arguments ?? "{}" },
+      };
+      if (call.extra_content) cleaned.extra_content = call.extra_content;
+      return cleaned;
+    });
   }
   if (message.tool_call_id) out.tool_call_id = message.tool_call_id;
+  // Gemini signs its function calls; dropping the signature makes it reject the
+  // follow-up turn. Other providers ignore this field.
+  if (message.extra_content) out.extra_content = message.extra_content;
   return out;
 }
 

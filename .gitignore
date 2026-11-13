@@ -45,3 +45,7 @@ supabase/new-project/
 .tools/
 
 *.pid
+
+# Telegram bot runtime state
+.telegram-bot.log
+.telegram-bot-state.json

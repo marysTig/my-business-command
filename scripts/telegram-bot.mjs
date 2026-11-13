@@ -11,7 +11,7 @@
 // Commands: /start (help), /overview (business overview), /reset (forget this chat).
 // Usage: honest one-shot check with `bun run scripts/telegram-bot.mjs --check`.
 
-import { readFileSync, appendFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 const ENV_FILES = ["../.env.local", "../.env"];
 for (const file of ENV_FILES) {
@@ -87,8 +87,27 @@ const { runLoop } = await import("../src/lib/ai/client.ts");
 const { executeTool, tools } = await import("../src/lib/ai/tools.ts");
 const { SYSTEM_PROMPT } = await import("../src/lib/ai/prompt.ts");
 
-// Per-chat conversation history (last 8 messages) so follow-ups stay in context.
+// Per-chat conversation history (last 16 messages) so follow-ups stay in context.
+// It is mirrored to disk, so a restart or a PC reboot no longer wipes what the
+// user already told the bot.
+const STATE_FILE = new URL("../.telegram-bot-state.json", import.meta.url);
 const histories = new Map();
+try {
+  const saved = JSON.parse(readFileSync(STATE_FILE, "utf8"));
+  for (const [chat, messages] of Object.entries(saved ?? {})) {
+    if (Array.isArray(messages)) histories.set(chat, messages);
+  }
+} catch {
+  // First run, or a corrupt file: start with empty histories.
+}
+
+function saveHistories() {
+  try {
+    writeFileSync(STATE_FILE, JSON.stringify(Object.fromEntries(histories)));
+  } catch (error) {
+    console.error(`could not save conversation history: ${error.message}`);
+  }
+}
 
 // ---------- Telegram formatting: model markdown -> Telegram HTML ----------
 function toTelegramHtml(text) {
@@ -137,6 +156,7 @@ async function askAssistant(chatId, question) {
   const text = String(reply.content ?? "I couldn't find an answer.").trim();
   history.push({ role: "assistant", content: text });
   histories.set(chatId, history);
+  saveHistories();
   return text;
 }
 
@@ -231,6 +251,7 @@ async function handleMessage(msg) {
 
   if (text.startsWith("/reset")) {
     histories.delete(chatId);
+    saveHistories();
     await sendReply(chatId, "Conversation cleared.");
     return;
   }
