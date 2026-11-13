@@ -148,6 +148,39 @@ Commands:
 /help      show this message
 In a group I only answer commands and @mentions.`;
 
+// Every power of the bot, as a Telegram command. Registered with setMyCommands
+// so typing "/" in Telegram shows this list, and printed by /commands too.
+const COMMANDS = [
+  { command: "help", description: "Toutes mes commandes / ce que je sais faire" },
+  { command: "overview", description: "Vue business: KPI, alertes, échéances" },
+  { command: "tasks", description: "Mes tâches par statut, avec les dates" },
+  { command: "customers", description: "Mes clients" },
+  { command: "projects", description: "Mes projets SaaS et leur avancement" },
+  { command: "sales", description: "Ventes: total, payé, impayé" },
+  { command: "expenses", description: "Mes dépenses perso du mois" },
+  { command: "prospects", description: "Fichiers de la liste prospection" },
+  { command: "research", description: "Résumé de mes recherches" },
+  { command: "add", description: "Ajouter: /add tâche appeler Ali" },
+  { command: "edit", description: "Modifier: /edit tâche <titre> terminé" },
+  { command: "search", description: "Recherche web: /search <sujet>" },
+  { command: "reset", description: "Oublier cette conversation" },
+];
+
+// What each read command actually asks the assistant.
+const COMMAND_PROMPTS = {
+  tasks: "List my tasks grouped by status, with due dates and priorities.",
+  customers: "List my customers with their contact details.",
+  projects: "List my SaaS projects with their status and progress.",
+  sales: "Summarise my sales: totals, amount paid and unpaid.",
+  expenses: "List my personal expenses for this month and the total.",
+  prospects: "List the prospect list files attached to each SaaS project.",
+  research: "Summarise my latest research reports.",
+};
+
+function commandsList() {
+  return COMMANDS.map((c) => `/${c.command} — ${c.description}`).join("\n");
+}
+
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const chatType = String(msg.chat.type ?? "private");
@@ -190,8 +223,9 @@ async function handleMessage(msg) {
     return;
   }
 
-  if (text.startsWith("/start") || text.startsWith("/help")) {
-    await sendReply(chatId, HELP);
+  // A lone "/" shows every power of the bot as a list to pick from.
+  if (text === "/" || text === "/commands" || text.startsWith("/start") || text.startsWith("/help")) {
+    await sendReply(chatId, `${HELP}\n\n<b>Mes commandes</b>\n${commandsList()}`);
     return;
   }
 
@@ -201,7 +235,26 @@ async function handleMessage(msg) {
     return;
   }
 
-  const question = text.startsWith("/overview")
+  // Turn a slash command into a concrete request for the assistant.
+  const cmdMatch = text.match(/^\/([a-z0-9_]+)\s*([\s\S]*)$/);
+  let question = "";
+  if (cmdMatch) {
+    const cmd = cmdMatch[1];
+    const arg = cmdMatch[2].trim();
+    if (cmd === "overview") question = "Give me a business overview";
+    else if (cmd === "search")
+      question = arg
+        ? `Search the live web for: ${arg}. Cite the URLs you actually used.`
+        : "Tell me what to search on the live web (usage: /search <query>).";
+    else if (cmd === "add") question = arg ? `Add this: ${arg}` : "Ask me what to add.";
+    else if (cmd === "edit") question = arg ? `Change this: ${arg}` : "Ask me which record to change.";
+    else if (COMMAND_PROMPTS[cmd])
+      question = arg ? `${COMMAND_PROMPTS[cmd]} Focus on: ${arg}` : COMMAND_PROMPTS[cmd];
+    else {
+      await sendReply(chatId, `Unknown command /${cmd}. Here is everything I can do:\n${commandsList()}`);
+      return;
+    }
+  } else question = text.startsWith("/overview")
     ? "Give me a business overview"
     : (BOT_USERNAME ? text.replace(new RegExp(`@${BOT_USERNAME}\\b`, "gi"), "") : text).trim();
 
@@ -234,6 +287,14 @@ async function handleMessage(msg) {
 
 const me = await tg("getMe").catch(() => null);
 const BOT_USERNAME = String(me?.username ?? "").toLowerCase();
+
+// Register the menu so typing "/" in Telegram lists every command.
+try {
+  await tg("setMyCommands", { commands: COMMANDS });
+  console.log(`registered ${COMMANDS.length} commands (type / in Telegram to see them)`);
+} catch (err) {
+  console.error(`could not register commands: ${err.message}`);
+}
 
 console.log(
   `Telegram bot starting as @${me?.username ?? "?"} (owner lock: ${OWNER ? "on" : "OFF — first chat gets its chat_id"}). Press Ctrl+C to stop.`,
