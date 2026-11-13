@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { applyResearch, sectionByKey, RESEARCH_SECTIONS } from "@/lib/ai/research";
+import { applyResearch, runResearch, sectionByKey, RESEARCH_SECTIONS } from "@/lib/ai/research";
 import { formatDate, useRows, type Row } from "@/lib/db";
 
 /**
@@ -41,6 +41,142 @@ function matchesSection(value: unknown, key: string): boolean {
   return names.some((name) => raw === name || raw.includes(name));
 }
 
+function tryJson(raw: string): unknown {
+  if (!/^[[{]/.test(raw)) return null;
+  // Some rows carry one or two stray closing brackets around an otherwise
+  // valid JSON array, so retry after shaving the tail before giving up.
+  for (let drop = 0; drop <= 2; drop += 1) {
+    const candidate = drop === 0 ? raw : raw.slice(0, -drop);
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // try the next shorter candidate
+    }
+  }
+  return null;
+}
+
+function renderValue(value: unknown): ReactNode {
+  if (value === null || value === undefined || value === "") return <span>—</span>;
+  if (Array.isArray(value)) {
+    return (
+      <ul className="list-disc space-y-1 pl-4">
+        {value.map((item, index) => (
+          <li key={index}>{renderValue(item)}</li>
+        ))}
+      </ul>
+    );
+  }
+  if (typeof value === "object") {
+    return (
+      <div className="space-y-0.5">
+        {Object.entries(value as Record<string, unknown>).map(([key, inner]) => (
+          <p key={key}>
+            <span className="font-medium text-foreground">{key} : </span>
+            {renderValue(inner)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return <span>{String(value)}</span>;
+}
+
+function inline(text: string): ReactNode[] {
+  return text
+    .split(/(\*\*[^*]+\*\*|\*[^*\n]+\*|`[^`]+`)/g)
+    .filter(Boolean)
+    .map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={index} className="font-semibold text-foreground">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+        return <em key={index}>{part.slice(1, -1)}</em>;
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return (
+          <code key={index} className="rounded bg-muted px-1 py-0.5">
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+}
+
+/** Findings arrive as light markdown: headings, bullets, bold, inline code. */
+function Markdownish({ text }: { text: string }) {
+  const blocks: ReactNode[] = [];
+  let bullets: string[] = [];
+
+  const flushBullets = () => {
+    if (bullets.length === 0) return;
+    blocks.push(
+      <ul key={`list-${blocks.length}`} className="list-disc space-y-1 pl-4">
+        {bullets.map((item, index) => (
+          <li key={index}>{inline(item)}</li>
+        ))}
+      </ul>,
+    );
+    bullets = [];
+  };
+
+  text.split(/\r?\n/).forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushBullets();
+      return;
+    }
+    if (/^[-*•]\s+/.test(trimmed)) {
+      bullets.push(trimmed.replace(/^[-*•]\s+/, ""));
+      return;
+    }
+    flushBullets();
+    if (/^#{1,6}\s+/.test(trimmed)) {
+      blocks.push(
+        <p key={index} className="mt-2 text-sm font-semibold text-foreground">
+          {inline(trimmed.replace(/^#{1,6}\s+/, ""))}
+        </p>,
+      );
+      return;
+    }
+    blocks.push(<p key={index}>{inline(trimmed)}</p>);
+  });
+  flushBullets();
+
+  return (
+    <div
+      className="space-y-1 text-xs leading-relaxed text-muted-foreground"
+      data-testid="research-findings"
+    >
+      {blocks}
+    </div>
+  );
+}
+
+/**
+ * Findings are markdown prose in recent reports, but an older run stored a JSON
+ * array as a string — render that as a readable list instead of raw brackets.
+ */
+function Findings({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = typeof value === "string" ? tryJson(value.trim()) : value;
+  if (parsed && typeof parsed === "object") {
+    return (
+      <div className="text-xs leading-relaxed text-muted-foreground" data-testid="research-findings">
+        {renderValue(parsed)}
+      </div>
+    );
+  }
+  const text = String(value).trim();
+  if (!text) return null;
+  return <Markdownish text={text} />;
+}
+
 function sectionLabel(value: unknown): string {
   const raw = String(value ?? "");
   const match = RESEARCH_SECTIONS.find((item) => matchesSection(raw, item.key));
@@ -56,6 +192,10 @@ export function ResearchFeed() {
   const queryClient = useQueryClient();
   const [section, setSection] = useState("all");
   const [applying, setApplying] = useState<string | null>(null);
+  const [runSection, setRunSection] = useState(RESEARCH_SECTIONS[0]?.key ?? "tasks");
+  const [question, setQuestion] = useState("");
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const { data = [], isLoading } = useRows("research_reports", {
     order: { column: "created_at", ascending: false },
@@ -63,6 +203,31 @@ export function ResearchFeed() {
   });
 
   const rows = section === "all" ? data : data.filter((row) => matchesSection(row["section"], section));
+
+  async function launch(event: React.FormEvent) {
+    event.preventDefault();
+    if (running) return;
+    const asked = question.trim();
+    if (asked.length < 3) {
+      setRunResult({ ok: false, message: "Écris une question de quelques mots." });
+      return;
+    }
+    setRunning(true);
+    setRunResult(null);
+    try {
+      await runResearch({ data: { section: runSection, question: asked } });
+      setRunResult({ ok: true, message: "Recherche terminée et enregistrée ci-dessous." });
+      setQuestion("");
+      await queryClient.invalidateQueries({ queryKey: ["research_reports"] });
+    } catch (error) {
+      setRunResult({
+        ok: false,
+        message: error instanceof Error ? error.message : "Échec de la recherche",
+      });
+    } finally {
+      setRunning(false);
+    }
+  }
 
   async function apply(report: Row) {
     setApplying(String(report["id"]));
@@ -92,6 +257,60 @@ export function ResearchFeed() {
 
   return (
     <div className="space-y-4">
+      <Card data-testid="research-run-card">
+        <CardContent className="pt-5">
+          <form onSubmit={launch} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground">Section</span>
+              <select
+                data-testid="research-run-section"
+                aria-label="Section de la recherche"
+                value={runSection}
+                onChange={(event) => setRunSection(event.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                {RESEARCH_SECTIONS.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-xs font-medium text-muted-foreground">Question</span>
+              <input
+                data-testid="research-run-question"
+                aria-label="Question de recherche"
+                placeholder="Ex : quels prix pratiquer pour mes projets SaaS ?"
+                value={question}
+                onChange={(event) => {
+                  setQuestion(event.target.value);
+                  setRunResult(null);
+                }}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              />
+            </label>
+            <Button type="submit" size="sm" data-testid="research-run" disabled={running}>
+              {running ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              Lancer
+            </Button>
+          </form>
+          <p
+            data-testid="research-run-status"
+            role="status"
+            className={
+              runResult && !runResult.ok
+                ? "mt-2 text-xs font-medium text-destructive"
+                : "mt-2 text-xs text-muted-foreground"
+            }
+          >
+            {runResult
+              ? runResult.message
+              : "Lance la même chose qu'un bot : POST /api/research {section, question}. Compte une vingtaine de secondes."}
+          </p>
+        </CardContent>
+      </Card>
+
       <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-2" data-testid="research-filters">
         <legend className="sr-only">Section</legend>
         <label className="flex cursor-pointer items-center gap-1.5 text-sm">
@@ -168,11 +387,7 @@ export function ResearchFeed() {
                   {report["summary"] ? (
                     <p className="text-sm text-foreground/90">{String(report["summary"])}</p>
                   ) : null}
-                  {report["findings"] ? (
-                    <p className="whitespace-pre-wrap text-xs leading-relaxed text-muted-foreground">
-                      {String(report["findings"])}
-                    </p>
-                  ) : null}
+                  <Findings value={report["findings"]} />
                   {sources.length > 0 ? (
                     <ul className="space-y-0.5">
                       {sources.map((source, index) => (
