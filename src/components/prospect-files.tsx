@@ -117,7 +117,10 @@ export function ProspectFiles() {
       }
 
       if (!file) return;
-      const path = `${targetId}/${Date.now()}-${file.name}`;
+      // Storage keys must stay ASCII-safe: Supabase rejects accents and other
+      // exotic characters with "Invalid key". The display name is unchanged.
+      const safeName = file.name.replace(/[^\w.\- ()]/g, "_").slice(-120);
+      const path = `${targetId}/${Date.now()}-${safeName}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         upsert: false,
         contentType: file.type || undefined,
