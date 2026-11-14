@@ -33,6 +33,10 @@ const tables = [
   "digital_products",
   "customers",
   "resources",
+  "blackchaine_products",
+  "blackchaine_clients",
+  "blackchaine_orders",
+  "blackchaine_expenses",
 ] as const;
 
 function SearchPage() {

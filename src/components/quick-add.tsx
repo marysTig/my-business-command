@@ -7,6 +7,7 @@ import {
   Library,
   Package,
   Plus,
+  Shirt,
   Users,
 } from "lucide-react";
 import { useState } from "react";
@@ -29,6 +30,9 @@ const items = [
   { table: "velora_orders", label: "Add Velora Order", icon: Gem },
   { table: "digital_products", label: "Add Digital Product", icon: Package },
   { table: "customers", label: "Add Customer", icon: Users },
+  { table: "blackchaine_products", label: "Add Blackchaine Product", icon: Shirt },
+  { table: "blackchaine_orders", label: "Add Blackchaine Order", icon: Shirt },
+  { table: "blackchaine_clients", label: "Add Blackchaine Client", icon: Shirt },
   { table: "resources", label: "Add Resource", icon: Library },
 ] as const;
 

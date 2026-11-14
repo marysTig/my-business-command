@@ -301,6 +301,231 @@ export type Database = {
         }
         Relationships: []
       }
+      blackchaine_clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          size: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          size?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          size?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      blackchaine_expenses: {
+        Row: {
+          amount: number | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          expense_date: string
+          id: string
+          label: string
+          notes: string | null
+          supplier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          expense_date?: string
+          id?: string
+          label: string
+          notes?: string | null
+          supplier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          expense_date?: string
+          id?: string
+          label?: string
+          notes?: string | null
+          supplier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      blackchaine_orders: {
+        Row: {
+          amount_paid: number | null
+          channel: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          delivery_date: string | null
+          id: string
+          item: string
+          notes: string | null
+          order_date: string | null
+          payment_status: string | null
+          product_id: string | null
+          quantity: number | null
+          size: string | null
+          status: string | null
+          unit_price: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          channel?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          delivery_date?: string | null
+          id?: string
+          item: string
+          notes?: string | null
+          order_date?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          size?: string | null
+          status?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          channel?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          delivery_date?: string | null
+          id?: string
+          item?: string
+          notes?: string | null
+          order_date?: string | null
+          payment_status?: string | null
+          product_id?: string | null
+          quantity?: number | null
+          size?: string | null
+          status?: string | null
+          unit_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blackchaine_orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "blackchaine_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blackchaine_orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "blackchaine_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blackchaine_products: {
+        Row: {
+          category: string | null
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          id: string
+          image_url: string | null
+          name: string
+          notes: string | null
+          price: number | null
+          sizes: string | null
+          status: string | null
+          stock: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          notes?: string | null
+          price?: number | null
+          sizes?: string | null
+          status?: string | null
+          stock?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          notes?: string | null
+          price?: number | null
+          sizes?: string | null
+          status?: string | null
+          stock?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       personal_expenses: {
         Row: {
           amount: number

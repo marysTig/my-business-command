@@ -5,6 +5,7 @@ import {
   CheckSquare,
   Globe,
   Package,
+  Shirt,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -66,9 +67,14 @@ function Dashboard() {
   const sales = useRows("sales", {});
   const customers = useRows("customers", {});
   const tasks = useRows("tasks", {});
+  const blackchaineOrders = useRows("blackchaine_orders", {});
 
   const loading =
-    websites.isLoading || tasks.isLoading || carBuyers.isLoading || sales.isLoading;
+    websites.isLoading ||
+    tasks.isLoading ||
+    carBuyers.isLoading ||
+    sales.isLoading ||
+    blackchaineOrders.isLoading;
 
   const today = new Date().toISOString().slice(0, 10);
   const taskRows = tasks.data ?? [];
@@ -84,6 +90,17 @@ function Dashboard() {
   const revenueThisMonth = paid
     .filter((s) => new Date(s["purchase_date"]) >= monthStart)
     .reduce((sum, s) => sum + Number(s["amount"] ?? 0), 0);
+  // Blackchaine is the clothing brand: its orders are counted on their own line
+  // so the brand's revenue is visible next to the other activities.
+  const bcOrders = blackchaineOrders.data ?? [];
+  const blackchaineRevenue = bcOrders
+    .filter((order) => order["status"] !== "Cancelled")
+    .reduce(
+      (sum, order) => sum + Number(order["unit_price"] ?? 0) * Number(order["quantity"] ?? 1),
+      0,
+    );
+  const blackchaineCurrency = String(bcOrders[0]?.["currency"] ?? "DZD");
+
   const activeSubscriptions = (customers.data ?? []).filter(
     (c) => c["product_type"] === "Subscription" && c["access_status"] === "Active",
   ).length;
@@ -113,6 +130,12 @@ function Dashboard() {
       title: r["name"],
       at: r["created_at"],
       to: "/customers",
+    })),
+    ...bcOrders.map((r) => ({
+      label: "Blackchaine order",
+      title: String(r["item"] ?? ""),
+      at: String(r["created_at"] ?? ""),
+      to: "/blackchaine",
     })),
   ]
     .filter((a) => a.at)
@@ -166,6 +189,12 @@ function Dashboard() {
           value={activeSubscriptions}
           icon={Users}
           to="/customers"
+        />
+        <Kpi
+          label="Blackchaine revenue"
+          value={formatMoney(blackchaineRevenue, blackchaineCurrency)}
+          icon={Shirt}
+          to="/blackchaine"
         />
       </div>
 
