@@ -243,6 +243,85 @@ export const veloraExpenseFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
+// Blackchaine — clothing brand.
+export const BLACKCHAINE_CATEGORIES = [
+  "T-shirt",
+  "Hoodie",
+  "Sweat",
+  "Pantalon",
+  "Veste",
+  "Casquette",
+  "Accessoire",
+  "Autre",
+] as const;
+
+export const BLACKCHAINE_PRODUCT_STATUSES = ["Draft", "Active", "Archived"] as const;
+
+export const BLACKCHAINE_ORDER_STATUSES = [
+  "New",
+  "Confirmed",
+  "Shipped",
+  "Delivered",
+  "Cancelled",
+] as const;
+
+export const BLACKCHAINE_CHANNELS = ["Instagram", "WhatsApp", "Boutique", "Site web", "Autre"] as const;
+
+export const blackchaineProductFields: Field[] = [
+  { name: "name", label: "Modèle", type: "text", required: true },
+  { name: "category", label: "Catégorie", type: "select", options: BLACKCHAINE_CATEGORIES },
+  { name: "sizes", label: "Tailles disponibles", type: "text", placeholder: "S, M, L, XL" },
+  { name: "price", label: "Prix de vente", type: "number" },
+  { name: "cost", label: "Coût de production", type: "number" },
+  { name: "currency", label: "Devise", type: "select", options: VELORA_CURRENCIES },
+  { name: "stock", label: "Stock", type: "number" },
+  { name: "status", label: "Statut", type: "select", options: BLACKCHAINE_PRODUCT_STATUSES },
+  { name: "image_url", label: "Photo (URL)", type: "url" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
+export const blackchaineClientFields: Field[] = [
+  { name: "name", label: "Client", type: "text", required: true },
+  { name: "phone", label: "Téléphone", type: "text" },
+  { name: "email", label: "Email", type: "text" },
+  { name: "city", label: "Ville", type: "text" },
+  { name: "address", label: "Adresse", type: "text" },
+  { name: "size", label: "Taille habituelle", type: "text" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
+export const blackchaineOrderFields: Field[] = [
+  {
+    name: "client_id",
+    label: "Client",
+    type: "relation",
+    relation: "blackchaine_clients",
+  },
+  { name: "product_id", label: "Modèle", type: "relation", relation: "blackchaine_products" },
+  { name: "item", label: "Article commandé", type: "text", required: true },
+  { name: "size", label: "Taille", type: "text" },
+  { name: "quantity", label: "Quantité", type: "number" },
+  { name: "unit_price", label: "Prix unitaire", type: "number" },
+  { name: "amount_paid", label: "Montant payé", type: "number" },
+  { name: "currency", label: "Devise", type: "select", options: VELORA_CURRENCIES },
+  { name: "status", label: "Statut", type: "select", options: BLACKCHAINE_ORDER_STATUSES },
+  { name: "payment_status", label: "Paiement", type: "select", options: PAYMENT_STATUSES },
+  { name: "channel", label: "Canal", type: "select", options: BLACKCHAINE_CHANNELS },
+  { name: "order_date", label: "Date commande", type: "date" },
+  { name: "delivery_date", label: "Date livraison", type: "date" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
+export const blackchaineExpenseFields: Field[] = [
+  { name: "label", label: "Dépense", type: "text", required: true },
+  { name: "amount", label: "Montant", type: "number" },
+  { name: "currency", label: "Devise", type: "select", options: VELORA_CURRENCIES },
+  { name: "expense_date", label: "Date", type: "date" },
+  { name: "category", label: "Catégorie", type: "text" },
+  { name: "supplier", label: "Fournisseur", type: "text" },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
 export const EXPENSE_CATEGORIES = [
   "Alimentation",
   "Transport",
@@ -324,6 +403,10 @@ export const labelColumn: Record<string, string> = {
   velora_clients: "name",
   velora_orders: "item",
   velora_expenses: "label",
+  blackchaine_products: "name",
+  blackchaine_clients: "name",
+  blackchaine_orders: "item",
+  blackchaine_expenses: "label",
   personal_expenses: "label",
   digital_products: "product_name",
   customers: "name",
@@ -339,6 +422,10 @@ export const searchColumns: Record<string, string[]> = {
   velora_expenses: ["label", "category", "notes"],
   personal_expenses: ["label", "category", "notes"],
   velora_orders: ["item", "financing_org", "notes", "status", "financing_status"],
+  blackchaine_products: ["name", "category", "sizes", "notes"],
+  blackchaine_clients: ["name", "phone", "email", "city", "address", "notes"],
+  blackchaine_orders: ["item", "size", "channel", "status", "payment_status", "notes"],
+  blackchaine_expenses: ["label", "category", "supplier", "notes"],
   digital_products: ["product_name", "description", "notes"],
   customers: ["name", "email", "phone", "notes"],
   resources: ["name", "url", "category", "description", "notes"],
@@ -352,6 +439,10 @@ export const entityRoutes: Record<string, string> = {
   velora_clients: "/velora",
   velora_orders: "/velora",
   velora_expenses: "/velora",
+  blackchaine_products: "/blackchaine",
+  blackchaine_clients: "/blackchaine",
+  blackchaine_orders: "/blackchaine",
+  blackchaine_expenses: "/blackchaine",
   personal_expenses: "/expenses",
   digital_products: "/products",
   customers: "/customers",
@@ -365,6 +456,10 @@ export const entityLabels: Record<string, string> = {
   car_buyers: "Car Buyers",
   velora_clients: "Velora Clients",
   velora_orders: "Velora Orders",
+  blackchaine_products: "Blackchaine Products",
+  blackchaine_clients: "Blackchaine Clients",
+  blackchaine_orders: "Blackchaine Orders",
+  blackchaine_expenses: "Blackchaine Dépenses",
   personal_expenses: "Dépenses",
   digital_products: "Digital Products",
   customers: "Customers",
@@ -379,6 +474,10 @@ export const entityFields: Record<string, Field[]> = {
   velora_clients: veloraClientFields,
   velora_orders: veloraOrderFields,
   velora_expenses: veloraExpenseFields,
+  blackchaine_products: blackchaineProductFields,
+  blackchaine_clients: blackchaineClientFields,
+  blackchaine_orders: blackchaineOrderFields,
+  blackchaine_expenses: blackchaineExpenseFields,
   personal_expenses: personalExpenseFields,
   digital_products: productFields,
   customers: customerFields,

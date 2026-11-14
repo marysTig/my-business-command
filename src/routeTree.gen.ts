@@ -18,6 +18,7 @@ import { Route as AppResourcesRouteImport } from './routes/_app.resources'
 import { Route as AppSearchRouteImport } from './routes/_app.search'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
+import { Route as AppBlackchaineIndexRouteImport } from './routes/_app.blackchaine.index'
 import { Route as AppCarsIndexRouteImport } from './routes/_app.cars.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
@@ -73,6 +74,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBlackchaineIndexRoute = AppBlackchaineIndexRouteImport.update({
+  id: '/blackchaine/',
+  path: '/blackchaine/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCarsIndexRoute = AppCarsIndexRouteImport.update({
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/saas/prospects': typeof AppSaasProspectsRoute
   '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
+  '/blackchaine/': typeof AppBlackchaineIndexRoute
   '/cars/': typeof AppCarsIndexRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/products/': typeof AppProductsIndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/saas/prospects': typeof AppSaasProspectsRoute
   '/velora/$id': typeof AppVeloraIdRoute
   '/websites/$id': typeof AppWebsitesIdRoute
+  '/blackchaine': typeof AppBlackchaineIndexRoute
   '/cars': typeof AppCarsIndexRoute
   '/customers': typeof AppCustomersIndexRoute
   '/products': typeof AppProductsIndexRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_app/saas/prospects': typeof AppSaasProspectsRoute
   '/_app/velora/$id': typeof AppVeloraIdRoute
   '/_app/websites/$id': typeof AppWebsitesIdRoute
+  '/_app/blackchaine/': typeof AppBlackchaineIndexRoute
   '/_app/cars/': typeof AppCarsIndexRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/products/': typeof AppProductsIndexRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/saas/prospects'
     | '/velora/$id'
     | '/websites/$id'
+    | '/blackchaine/'
     | '/cars/'
     | '/customers/'
     | '/products/'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/saas/prospects'
     | '/velora/$id'
     | '/websites/$id'
+    | '/blackchaine'
     | '/cars'
     | '/customers'
     | '/products'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/_app/saas/prospects'
     | '/_app/velora/$id'
     | '/_app/websites/$id'
+    | '/_app/blackchaine/'
     | '/_app/cars/'
     | '/_app/customers/'
     | '/_app/products/'
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/blackchaine/': {
+      id: '/_app/blackchaine/'
+      path: '/blackchaine'
+      fullPath: '/blackchaine/'
+      preLoaderRoute: typeof AppBlackchaineIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/cars/': {
@@ -445,6 +464,7 @@ interface AppRouteChildren {
   AppSaasProspectsRoute: typeof AppSaasProspectsRoute
   AppVeloraIdRoute: typeof AppVeloraIdRoute
   AppWebsitesIdRoute: typeof AppWebsitesIdRoute
+  AppBlackchaineIndexRoute: typeof AppBlackchaineIndexRoute
   AppCarsIndexRoute: typeof AppCarsIndexRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppProductsIndexRoute: typeof AppProductsIndexRoute
@@ -467,6 +487,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSaasProspectsRoute: AppSaasProspectsRoute,
   AppVeloraIdRoute: AppVeloraIdRoute,
   AppWebsitesIdRoute: AppWebsitesIdRoute,
+  AppBlackchaineIndexRoute: AppBlackchaineIndexRoute,
   AppCarsIndexRoute: AppCarsIndexRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppProductsIndexRoute: AppProductsIndexRoute,

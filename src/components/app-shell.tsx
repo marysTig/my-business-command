@@ -12,6 +12,7 @@ import {
   Package,
   Search,
   Settings,
+  Shirt,
   Sparkles,
   Users,
   Wallet,
@@ -47,6 +48,7 @@ const nav = [
   { to: "/customers", label: "Customers", icon: Users, testId: "nav-customers" },
   { to: "/resources", label: "Resources", icon: Library, testId: "nav-resources" },
   { to: "/velora", label: "Velora", icon: Gem, testId: "nav-velora" },
+  { to: "/blackchaine", label: "Blackchaine", icon: Shirt, testId: "nav-blackchaine" },
   { to: "/expenses", label: "Dépenses", icon: Wallet, testId: "nav-expenses" },
   { to: "/settings", label: "Settings", icon: Settings, testId: "nav-settings" },
 ] as const;

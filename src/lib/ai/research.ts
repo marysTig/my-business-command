@@ -75,6 +75,17 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
   },
   { key: "team", label: "Équipe", tables: ["team_members"], hint: "capacité, délégation" },
   {
+    key: "blackchaine",
+    label: "Blackchaine",
+    tables: [
+      "blackchaine_products",
+      "blackchaine_orders",
+      "blackchaine_clients",
+      "blackchaine_expenses",
+    ],
+    hint: "mode/textile, tendances, fournisseurs, boutiques et revendeurs",
+  },
+  {
     key: "general",
     label: "Recherche libre",
     tables: [],
