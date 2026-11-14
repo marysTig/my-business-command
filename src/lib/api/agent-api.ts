@@ -17,7 +17,8 @@
  *   GET    /api/tasks?status=&limit= list tasks
  *   POST   /api/tasks               { title, priority?, due_date?, description? } -> new task
  *   PATCH  /api/tasks/:id           { status } -> move a task
- *   GET    /api/research?section=   saved research reports (newest first)
+ *   GET    /api/research?section=   saved research reports (newest first); a short
+ *                                   name such as "saas" also matches "saas_projects"
  *   POST   /api/research            { section, question } -> runs research, saves a report
  *   POST   /api/research/:id/apply  writes that report's proposed record changes
  *   GET    /api/prospect-files?project_id=|project=   Word/Excel files of a SaaS project
@@ -733,15 +734,25 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
     if (path === "/api/research") {
       if (request.method === "GET") {
         const section = (url.searchParams.get("section") ?? "").trim();
-        const rows = await executeTool("query_table", {
-          table: "research_reports",
-          filters: [
-            { column: "section", operator: "eq", value: section },
-          ],
+        const query = {
+          table: "research_reports" as const,
           order_by: "created_at",
           order_asc: false,
           limit: 20,
+        };
+        // An empty section lists everything. Sections are stored under their full
+        // name ("saas_projects", "blackchaine_orders"), so a short name like
+        // "saas" first misses and then falls back to a contains match.
+        let rows = await executeTool("query_table", {
+          ...query,
+          filters: section ? [{ column: "section", operator: "eq", value: section }] : [],
         });
+        if (section && (rows as unknown[]).length === 0) {
+          rows = await executeTool("query_table", {
+            ...query,
+            filters: [{ column: "section", operator: "ilike", value: section }],
+          });
+        }
         return json({ reports: rows });
       }
       if (request.method === "POST") {

@@ -238,6 +238,27 @@
     0 0 0 1px color-mix(in oklab, var(--primary) 18%, transparent);
 }
 
+/*
+ * Other pages: the shell puts every route inside `.dash-scene`, so their cards
+ * get the same depth on hover without being edited one by one.
+ */
+.dash-scene [data-slot="card"]:not(.dash-card) {
+  transform-style: preserve-3d;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 0.68, 0.25, 1),
+    box-shadow 0.4s ease,
+    border-color 0.4s ease;
+}
+
+.dash-scene [data-slot="card"]:not(.dash-card):hover,
+.dash-scene [data-slot="card"]:not(.dash-card):focus-within {
+  transform: translate3d(0, -4px, 18px) rotateX(3deg) rotateY(-2deg);
+  border-color: color-mix(in oklab, var(--primary) 28%, var(--border));
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 8%) inset,
+    0 28px 60px -36px oklch(0 0 0 / 85%);
+}
+
 .dash-hero {
   position: relative;
   overflow: hidden;
@@ -318,7 +339,9 @@
 
   .dash-card:hover,
   .dash-card:focus-within,
-  .dash-chip:hover {
+  .dash-chip:hover,
+  .dash-scene [data-slot="card"]:not(.dash-card):hover,
+  .dash-scene [data-slot="card"]:not(.dash-card):focus-within {
     transform: none;
   }
 }

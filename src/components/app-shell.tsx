@@ -161,6 +161,7 @@ function Brand() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const member = useMember();
   const [term, setTerm] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -224,7 +225,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl space-y-6 p-4 lg:p-6">{children}</main>
+        {/* Every page shares the dashboard depth: the scene sets the perspective
+            and the keyed wrapper replays the rise animation on each navigation. */}
+        <main className="dash-scene mx-auto w-full max-w-7xl p-4 lg:p-6">
+          <div key={pathname} className="dash-rise space-y-6">
+            {children}
+          </div>
+        </main>
       </div>
 
       <AiChat />
