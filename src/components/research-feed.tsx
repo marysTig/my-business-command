@@ -1,13 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDelete } from "@/components/confirm-delete";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { applyResearch, runResearch, sectionByKey, RESEARCH_SECTIONS } from "@/lib/ai/research";
-import { formatDate, useRows, type Row } from "@/lib/db";
+import { formatDate, useDeleteRow, useRows, type Row } from "@/lib/db";
 
 /**
  * JSONB columns come back as arrays, but a report written by an older bot build
@@ -196,6 +197,8 @@ export function ResearchFeed() {
   const [question, setQuestion] = useState("");
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [deleting, setDeleting] = useState<Row | null>(null);
+  const remove = useDeleteRow("research_reports");
 
   const { data = [], isLoading } = useRows("research_reports", {
     order: { column: "created_at", ascending: false },
@@ -382,6 +385,17 @@ export function ResearchFeed() {
                         <Check className="size-3" /> Appliqué
                       </Badge>
                     ) : null}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto size-8 text-muted-foreground hover:text-destructive"
+                      aria-label="Supprimer cette recherche"
+                      title="Supprimer cette recherche"
+                      data-testid={`research-delete-${report["id"]}`}
+                      onClick={() => setDeleting(report)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
                   </div>
                   <p className="text-sm font-medium">{String(report["question"] ?? "")}</p>
                   {report["summary"] ? (
@@ -431,6 +445,18 @@ export function ResearchFeed() {
           })}
         </div>
       )}
+
+      <ConfirmDelete
+        open={Boolean(deleting)}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(null);
+        }}
+        name={deleting ? `« ${String(deleting["question"] ?? "cette recherche")} »` : "cette recherche"}
+        onConfirm={() => {
+          if (deleting) remove.mutate(String(deleting["id"]));
+          setDeleting(null);
+        }}
+      />
     </div>
   );
 }
