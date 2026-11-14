@@ -74,6 +74,12 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
     hint: "habitudes de dépense, économies possibles",
   },
   { key: "team", label: "Équipe", tables: ["team_members"], hint: "capacité, délégation" },
+  {
+    key: "general",
+    label: "Recherche libre",
+    tables: [],
+    hint: "marché, actualités, concurrents, prospects",
+  },
 ];
 
 export type ResearchSource = { title: string; url: string; snippet?: string };
@@ -115,6 +121,7 @@ export function sectionByKey(key: string): ResearchSection | undefined {
 
 /** Compact look at what the section actually contains right now. */
 async function gatherSnapshot(section: ResearchSection): Promise<string> {
+  if (section.tables.length === 0) return "{}";
   const snapshot: Record<string, unknown> = {};
   for (const table of section.tables) {
     try {
@@ -145,6 +152,66 @@ async function webSearch(query: string, numResults = 4): Promise<ResearchSource[
   }
 }
 
+/**
+ * Research is web-first: the question, the market, the competitors and the
+ * prospect angle are searched in parallel, then deduplicated by URL.
+ */
+async function webSearchBroad(
+  question: string,
+  section: ResearchSection,
+  subject: string,
+): Promise<ResearchSource[]> {
+  const base = subject || question;
+  const queries = [
+    question,
+    `${base} marché tendances actualités`,
+    `${base} concurrents offres tarifs`,
+    `${base} ${section.hint}`,
+  ];
+  const batches = await Promise.all(queries.map((query) => webSearch(query, 5)));
+  const seen = new Set<string>();
+  const merged: ResearchSource[] = [];
+  for (const item of batches.flat()) {
+    if (!item.url || seen.has(item.url)) continue;
+    seen.add(item.url);
+    merged.push(item);
+  }
+  return merged.slice(0, 14);
+}
+
+/**
+ * Projects named in the question are looked up so the research can use their
+ * definition (description, notes, audience). A project that is not in the
+ * dashboard is fine: the question itself carries the description.
+ */
+const PROJECT_TABLES = [
+  { table: "saas_projects", nameColumn: "project_name" },
+  { table: "client_websites", nameColumn: "project_name" },
+  { table: "digital_products", nameColumn: "product_name" },
+] as const;
+
+async function projectContext(question: string): Promise<Record<string, unknown>[]> {
+  const asked = question.toLowerCase();
+  const found: Record<string, unknown>[] = [];
+  await Promise.all(
+    PROJECT_TABLES.map(async ({ table, nameColumn }) => {
+      try {
+        const rows = (await executeTool("query_table", { table, limit: 50 })) as unknown;
+        if (!Array.isArray(rows)) return;
+        for (const row of rows as Record<string, unknown>[]) {
+          const name = String(row[nameColumn] ?? "").trim();
+          if (name.length < 3) continue;
+          if (!asked.includes(name.toLowerCase())) continue;
+          found.push({ table, ...row });
+        }
+      } catch {
+        // A missing or empty table is not a reason to fail the research.
+      }
+    }),
+  );
+  return found.slice(0, 3);
+}
+
 /** Allowed columns per section table, so proposed writes stay valid. */
 function columnGuide(section: ResearchSection): string {
   return section.tables
@@ -153,15 +220,21 @@ function columnGuide(section: ResearchSection): string {
     .join("\n");
 }
 
-const RESEARCH_SYSTEM = `You are the research analyst inside My Business OS, a private business dashboard.
+const RESEARCH_SYSTEM = `You are the market and lead research analyst inside My Business OS.
 
-You receive (1) a snapshot of the user's own rows for one dashboard section and (2) live web search results.
-Produce decisions the user can act on today: what their data says, what the outside world says, and the next moves.
+Your job is to bring the outside world in: news, market trends, competitors, pricing, demand and the prospects/leads worth contacting.
+You receive (1) the user's question or project definition, (2) live web search results from several angles, and (3) an optional snapshot of the user's own rows.
+
+The web is your main source. The dashboard snapshot is background only: use it to anchor the advice in what the user already does, never as the substance of the answer.
+An empty dashboard must not stop you and must not turn into "I have no data": the research question stands on its own.
+If the user describes a project that is not in the dashboard, research that project from their description.
 
 RULES
 - Reply in the language of the user's question (French question -> French answer).
-- Every number about the business must come from the snapshot. Never invent figures. If data is thin, say so plainly.
-- Web facts get their URL in parentheses. Ignore web results that do not fit the question.
+- Base the answer on the web results: facts, market signals, competitors, prices, demand. Cite the URLs you used.
+- Business numbers from the snapshot are quoted exactly; if the snapshot is empty, say the dashboard is empty in one short line and move on to the research.
+- Always end the findings with a concrete "Prospects / leads" section: who to contact, why they fit, and where to find them. Name real segments, companies or directories when the results allow it.
+- Never invent a company, a price or a statistic: if the web results do not cover a point, say so.
 - Propose at most ${MAX_ACTIONS} record changes, and only when the data clearly justifies them.
   Do not propose deletes. Do not touch id, created_at, user_id or other protected columns.
 - Return ONLY a JSON object, no prose outside it, in this exact shape:
@@ -226,25 +299,48 @@ function normalizeActions(value: unknown, section: ResearchSection): ResearchAct
 }
 
 async function runResearchInternal(sectionKey: string, question: string): Promise<ResearchReport> {
-  const section = sectionByKey(sectionKey);
-  if (!section) throw new Error(`Unknown section "${sectionKey}".`);
+  // An unknown (or empty) section means free research: no dashboard anchor,
+  // no proposed writes. The question alone drives it.
+  const section = sectionByKey(sectionKey) ?? sectionByKey("general")!;
   const asked = question.trim();
   if (asked.length < 3) throw new Error("Ask a longer question (at least a few words).");
 
-  // Fetch the two sources at the same time: they are independent.
+  const projects = await projectContext(asked);
+  const subject = projects
+    .map((project) => String(project["project_name"] ?? project["product_name"] ?? ""))
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  // The web is the primary source; the dashboard snapshot is optional context.
   const [snapshot, web] = await Promise.all([
     gatherSnapshot(section),
-    webSearch(`${asked} ${section.label} ${section.hint}`),
+    webSearchBroad(asked, section, subject),
   ]);
+
+  const projectBrief =
+    projects.length > 0
+      ? projects
+          .map((project) => {
+            const lines = Object.entries(project)
+              .filter(([key]) => !["id", "user_id", "created_at", "updated_at"].includes(key))
+              .map(([key, value]) => `${key}: ${String(value ?? "").slice(0, 400)}`)
+              .join("\n");
+            return lines;
+          })
+          .join("\n---\n")
+          .slice(0, 4000)
+      : "No project of that name in the dashboard: use the description contained in the question.";
 
   const userContent = [
     `SECTION: ${section.label} (${section.key})`,
-    `USER QUESTION: ${asked}`,
-    `TABLES AND COLUMNS YOU MAY WRITE TO:\n${columnGuide(section)}`,
-    `DASHBOARD DATA:\n${snapshot}`,
+    `USER QUESTION / PROJECT DEFINITION: ${asked}`,
+    `PROJECT FOUND IN THE DASHBOARD:\n${projectBrief}`,
+    `DASHBOARD SNAPSHOT (background only, may be empty):\n${snapshot}`,
+    `TABLES AND COLUMNS YOU MAY PROPOSE WRITES TO:\n${columnGuide(section) || "none for a free research"}`,
     web.length > 0
-      ? `WEB RESULTS:\n${JSON.stringify(web).slice(0, 6000)}`
-      : "WEB RESULTS: none available right now — answer from the dashboard data only and say that live web data was unavailable.",
+      ? `WEB RESULTS:\n${JSON.stringify(web).slice(0, 9000)}`
+      : "WEB RESULTS: none available right now — say plainly that live web data was unavailable, then answer from what is certain and do not invent facts.",
   ].join("\n\n");
 
   const { data } = await chatCompletions({

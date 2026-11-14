@@ -192,7 +192,7 @@ export function ResearchFeed() {
   const queryClient = useQueryClient();
   const [section, setSection] = useState("all");
   const [applying, setApplying] = useState<string | null>(null);
-  const [runSection, setRunSection] = useState(RESEARCH_SECTIONS[0]?.key ?? "tasks");
+  const [runSection, setRunSection] = useState("general");
   const [question, setQuestion] = useState("");
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -306,7 +306,7 @@ export function ResearchFeed() {
           >
             {runResult
               ? runResult.message
-              : "Lance la même chose qu'un bot : POST /api/research {section, question}. Compte une vingtaine de secondes."}
+              : "Recherche web (marché, actualités, concurrents, prospects) : POST /api/research {section, question}. Compte une trentaine de secondes."}
           </p>
         </CardContent>
       </Card>
