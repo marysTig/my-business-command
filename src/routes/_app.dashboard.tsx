@@ -10,6 +10,8 @@ import {
   Users,
 } from "lucide-react";
 
+import type { CSSProperties } from "react";
+
 import { LoadingCards } from "@/components/loading";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -34,21 +36,29 @@ export const Route = createFileRoute("/_app/dashboard")({
   component: Dashboard,
 });
 
+/** Stagger helper: each card rises slightly after the previous one. */
+function delay(ms: number): CSSProperties {
+  return { "--delay": `${ms}ms` } as CSSProperties;
+}
+
 function Kpi({
   label,
   value,
   icon: Icon,
   to,
+  index,
 }: {
   label: string;
   value: string | number;
   icon: any;
   to: string;
+  index: number;
 }) {
   return (
     <Link
       to={to}
-      className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent/50"
+      style={delay(index * 55)}
+      className="dash-card dash-rise rounded-xl border border-border bg-card/80 p-4 backdrop-blur-sm transition-colors hover:bg-accent/50"
     >
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{label}</p>
@@ -144,62 +154,88 @@ function Dashboard() {
 
   if (loading) return <LoadingCards cards={8} />;
 
+  const kpis = [
+    {
+      label: "Active client websites",
+      value: (websites.data ?? []).filter((w) => !["Completed"].includes(w["status"])).length,
+      icon: Globe,
+      to: "/websites",
+    },
+    { label: "SaaS projects", value: (saas.data ?? []).length, icon: Briefcase, to: "/saas" },
+    { label: "Car buyers", value: (carBuyers.data ?? []).length, icon: Car, to: "/cars" },
+    {
+      label: "Visits planned",
+      value: (carBuyers.data ?? []).filter((l) => l["status"] === "Visit Planned").length,
+      icon: Car,
+      to: "/cars",
+    },
+    {
+      label: "Digital products",
+      value: (products.data ?? []).length,
+      icon: Package,
+      to: "/products",
+    },
+    { label: "Total sales", value: formatMoney(totalSales), icon: TrendingUp, to: "/customers" },
+    {
+      label: "Revenue this month",
+      value: formatMoney(revenueThisMonth),
+      icon: TrendingUp,
+      to: "/customers",
+    },
+    { label: "Active subscriptions", value: activeSubscriptions, icon: Users, to: "/customers" },
+    {
+      label: "Blackchaine revenue",
+      value: formatMoney(blackchaineRevenue, blackchaineCurrency),
+      icon: Shirt,
+      to: "/blackchaine",
+    },
+  ];
+
   return (
-    <>
+    <div className="dash-scene space-y-6">
       <PageHeader
         title="Dashboard"
         description="Everything you run, in one place."
       />
 
+      <section className="dash-hero dash-rise p-5 sm:p-6">
+        <p className="text-[11px] font-medium tracking-[0.22em] text-muted-foreground uppercase">
+          Command center
+        </p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          Your business, in depth.
+        </h2>
+        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+          Sites, SaaS, cars, produits digitaux et Blackchaine — tout ce que tu pilotes, sur un seul
+          plan.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link to="/blackchaine" className="dash-chip">
+            <Shirt className="size-3.5" /> Blackchaine
+          </Link>
+          <Link to="/saas" className="dash-chip">
+            <Briefcase className="size-3.5" /> SaaS
+          </Link>
+          <Link to="/velora" className="dash-chip">
+            Velora
+          </Link>
+          <Link to="/tasks" className="dash-chip">
+            <CheckSquare className="size-3.5" /> Tâches
+          </Link>
+          <Link to="/research" className="dash-chip">
+            Recherches
+          </Link>
+        </div>
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi
-          label="Active client websites"
-          value={(websites.data ?? []).filter((w) => !["Completed"].includes(w["status"])).length}
-          icon={Globe}
-          to="/websites"
-        />
-        <Kpi label="SaaS projects" value={(saas.data ?? []).length} icon={Briefcase} to="/saas" />
-        <Kpi
-          label="Car buyers"
-          value={(carBuyers.data ?? []).length}
-          icon={Car}
-          to="/cars"
-        />
-        <Kpi
-          label="Visits planned"
-          value={(carBuyers.data ?? []).filter((l) => l["status"] === "Visit Planned").length}
-          icon={Car}
-          to="/cars"
-        />
-        <Kpi
-          label="Digital products"
-          value={(products.data ?? []).length}
-          icon={Package}
-          to="/products"
-        />
-        <Kpi label="Total sales" value={formatMoney(totalSales)} icon={TrendingUp} to="/customers" />
-        <Kpi
-          label="Revenue this month"
-          value={formatMoney(revenueThisMonth)}
-          icon={TrendingUp}
-          to="/customers"
-        />
-        <Kpi
-          label="Active subscriptions"
-          value={activeSubscriptions}
-          icon={Users}
-          to="/customers"
-        />
-        <Kpi
-          label="Blackchaine revenue"
-          value={formatMoney(blackchaineRevenue, blackchaineCurrency)}
-          icon={Shirt}
-          to="/blackchaine"
-        />
+        {kpis.map((kpi, index) => (
+          <Kpi key={kpi.label} {...kpi} index={index} />
+        ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="dash-card dash-rise lg:col-span-2" style={delay(500)}>
           <CardHeader>
             <CardTitle className="text-base">Tasks board</CardTitle>
           </CardHeader>
@@ -235,7 +271,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dash-card dash-rise" style={delay(560)}>
           <CardHeader>
             <CardTitle className="text-base">Today&apos;s tasks</CardTitle>
           </CardHeader>
@@ -258,7 +294,7 @@ function Dashboard() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="dash-card dash-rise" style={delay(620)}>
         <CardHeader>
           <CardTitle className="text-base">Recent activity</CardTitle>
         </CardHeader>
@@ -286,6 +322,6 @@ function Dashboard() {
           )}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
