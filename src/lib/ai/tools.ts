@@ -378,6 +378,43 @@ export const tools: ToolDef[] = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "save_research_report",
+      description:
+        "File a research report in the dashboard (research_reports) so it shows up on the Research page. Call it right after a market / news / competitor / leads research, with the same content you are about to send: the question or project definition, a 2-3 sentence summary, the findings as light markdown, and the source URLs you actually used. It never writes to the business tables.",
+      parameters: {
+        type: "object",
+        properties: {
+          section: {
+            type: "string",
+            description:
+              "Research section: tasks, customers, sales, cars, saas, websites, products, resources, leads, properties, velora, expenses, team, or general for free research.",
+          },
+          question: { type: "string", description: "The user's question or the project definition used." },
+          summary: { type: "string", description: "2-3 sentences with the headline finding." },
+          findings: {
+            type: "string",
+            description: "The findings, as light markdown (## headings, - bullets, **bold**).",
+          },
+          sources: {
+            type: "array",
+            description: "The web pages you used.",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                url: { type: "string" },
+              },
+              required: ["url"],
+            },
+          },
+        },
+        required: ["question", "summary", "findings"],
+      },
+    },
+  },
 ];
 
 export async function executeTool(
@@ -394,6 +431,36 @@ export async function executeTool(
   }
 
   const supabase = getClient();
+
+  if (name === "save_research_report") {
+    const question = String(args["question"] ?? "").trim();
+    if (!question) throw new Error("question is required.");
+    const section = String(args["section"] ?? "general").trim() || "general";
+    const sources = Array.isArray(args["sources"])
+      ? (args["sources"] as unknown[])
+          .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+          .map((item) => ({
+            title: String(item["title"] ?? item["url"] ?? "Source").slice(0, 200),
+            url: String(item["url"] ?? "").slice(0, 500),
+          }))
+          .filter((item) => /^https?:\/\//i.test(item.url))
+          .slice(0, 10)
+      : [];
+    const { data, error } = await (supabase.from("research_reports" as never) as any)
+      .insert({
+        section,
+        question: question.slice(0, 2000),
+        summary: String(args["summary"] ?? "").slice(0, 2000) || null,
+        findings: String(args["findings"] ?? "").slice(0, 8000) || null,
+        sources,
+        actions: [],
+        created_by: "telegram",
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { saved: true, id: (data as { id?: string } | null)?.id ?? null, section };
+  }
 
   if (name === "get_dashboard_overview") {
     return computeInsights();
