@@ -117,8 +117,9 @@ function saveHistories() {
 const KEYBOARD = {
   keyboard: [
     ["📊 Vue business", "✅ Tâches"],
-    ["💼 Projets SaaS", "🔎 Recherche web"],
-    ["🧾 Dépenses", "❓ Aide"],
+    ["🎯 Leads", "🔎 Recherche web"],
+    ["💼 Projets SaaS", "🧾 Dépenses"],
+    ["❓ Aide"],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -129,6 +130,7 @@ const BUTTON_COMMANDS = new Map([
   ["📊 Vue business", "/overview"],
   ["✅ Tâches", "/tasks"],
   ["💼 Projets SaaS", "/projects"],
+  ["🎯 Leads", "/leads"],
   ["🔎 Recherche web", "/search"],
   ["🧾 Dépenses", "/expenses"],
   ["❓ Aide", "/help"],
@@ -198,6 +200,7 @@ const HELP = [
   "/tasks — ✅ tâches par statut",
   "/customers — 👥 clients",
   "/projects — 💼 projets SaaS",
+  "/leads — 🎯 prospects (Algérie) : /leads web, /leads New, /leads Oran",
   "/sales — 💰 ventes et impayés",
   "/expenses — 🧾 dépenses du mois",
   "/prospects — 📎 fichiers de prospection",
@@ -218,6 +221,7 @@ const COMMANDS = [
   { command: "tasks", description: "Mes tâches par statut, avec les dates" },
   { command: "customers", description: "Mes clients" },
   { command: "projects", description: "Mes projets SaaS et leur avancement" },
+  { command: "leads", description: "Mes prospects : /leads web, /leads New, /leads Oran" },
   { command: "sales", description: "Ventes: total, payé, impayé" },
   { command: "expenses", description: "Mes dépenses perso du mois" },
   { command: "prospects", description: "Fichiers de la liste prospection" },
@@ -233,6 +237,7 @@ const COMMAND_PROMPTS = {
   tasks: "List my tasks grouped by status, with due dates and priorities.",
   customers: "List my customers with their contact details.",
   projects: "List my SaaS projects with their status and progress.",
+  leads: "List my leads: how many in total, how many are website leads (desired_property_type or notes mention a site, redesign, catalog, landing or booking page), and the ones with status New. Group by status, show name, phone, city and need.",
   sales: "Summarise my sales: totals, amount paid and unpaid.",
   expenses: "List my personal expenses for this month and the total.",
   prospects: "List the prospect list files attached to each SaaS project.",
@@ -318,6 +323,10 @@ async function handleMessage(msg) {
       question = arg
         ? `Search the live web for: ${arg}. Cite the URLs you actually used.`
         : "Tell me what to search on the live web (usage: /search <query>).";
+    else if (cmd === "leads")
+      question = arg
+        ? `List my leads filtered by "${arg}". Read the filter as a status (New, Contacted, Qualified, Proposal, Won, Lost), a city or wilaya, or "web" / "site" meaning a website lead (desired_property_type or notes mention a site, redesign, catalog, landing or booking page). Show name, phone, city, need and status for each.`
+        : "List my leads grouped by status: total, website leads, and the New ones with phone and city.";
     else if (cmd === "add") question = arg ? `Add this: ${arg}` : "Ask me what to add.";
     else if (cmd === "edit") question = arg ? `Change this: ${arg}` : "Ask me which record to change.";
     else if (COMMAND_PROMPTS[cmd])

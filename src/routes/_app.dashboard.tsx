@@ -6,6 +6,7 @@ import {
   Globe,
   Package,
   Shirt,
+  Target,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -18,6 +19,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatMoney, useRows, type Row } from "@/lib/db";
 import { TASK_BOARD_STATUSES } from "@/lib/entities";
+import { isWebsiteLead } from "@/lib/leads";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -78,13 +80,15 @@ function Dashboard() {
   const customers = useRows("customers", {});
   const tasks = useRows("tasks", {});
   const blackchaineOrders = useRows("blackchaine_orders", {});
+  const leads = useRows("leads", {});
 
   const loading =
     websites.isLoading ||
     tasks.isLoading ||
     carBuyers.isLoading ||
     sales.isLoading ||
-    blackchaineOrders.isLoading;
+    blackchaineOrders.isLoading ||
+    leads.isLoading;
 
   const today = new Date().toISOString().slice(0, 10);
   const taskRows = tasks.data ?? [];
@@ -110,6 +114,12 @@ function Dashboard() {
       0,
     );
   const blackchaineCurrency = String(bcOrders[0]?.["currency"] ?? "DZD");
+
+  // Leads are the prospection pipeline; the website ones are the service the
+  // user sells most, so they get their own counter next to the total.
+  const leadRows = leads.data ?? [];
+  const websiteLeads = leadRows.filter(isWebsiteLead);
+  const leadsToContact = leadRows.filter((lead) => lead["status"] === "New");
 
   const activeSubscriptions = (customers.data ?? []).filter(
     (c) => c["product_type"] === "Subscription" && c["access_status"] === "Active",
@@ -146,6 +156,12 @@ function Dashboard() {
       title: String(r["item"] ?? ""),
       at: String(r["created_at"] ?? ""),
       to: "/blackchaine",
+    })),
+    ...leadRows.map((r) => ({
+      label: "Lead added",
+      title: String(r["name"] ?? ""),
+      at: String(r["created_at"] ?? ""),
+      to: "/leads",
     })),
   ]
     .filter((a) => a.at)
@@ -188,6 +204,19 @@ function Dashboard() {
       value: formatMoney(blackchaineRevenue, blackchaineCurrency),
       icon: Shirt,
       to: "/blackchaine",
+    },
+    { label: "Leads", value: leadRows.length, icon: Target, to: "/leads" },
+    {
+      label: "Website leads",
+      value: websiteLeads.length,
+      icon: Globe,
+      to: "/leads/websites",
+    },
+    {
+      label: "Leads to contact",
+      value: leadsToContact.length,
+      icon: Target,
+      to: "/leads",
     },
   ];
 
