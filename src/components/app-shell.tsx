@@ -33,7 +33,16 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, testId: "nav-tasks" },
   { to: "/research", label: "Recherches", icon: Sparkles, testId: "nav-research" },
-  { to: "/leads", label: "Leads", icon: Target, testId: "nav-leads" },
+  {
+    to: "/leads",
+    label: "Leads",
+    icon: Target,
+    testId: "nav-leads",
+    children: [
+      { to: "/leads", label: "Tous les leads", testId: "nav-leads-all" },
+      { to: "/leads/websites", label: "Sites web", testId: "nav-leads-websites" },
+    ],
+  },
   { to: "/websites", label: "Client Websites", icon: Globe, testId: "nav-websites" },
   {
     to: "/saas",

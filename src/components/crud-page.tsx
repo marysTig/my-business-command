@@ -36,6 +36,7 @@ export function CrudPage({
   detailPath,
   toolbar,
   emptyTitle,
+  rowFilter,
 }: {
   table: string;
   title: string;
@@ -46,6 +47,8 @@ export function CrudPage({
   detailPath?: string;
   toolbar?: ReactNode;
   emptyTitle?: string;
+  /** Keeps only the rows that belong to this sub-section. */
+  rowFilter?: (row: Row) => boolean;
 }) {
   const { data = [], isLoading } = useRows(table, {});
   const del = useDeleteRow(table);
@@ -61,11 +64,12 @@ export function CrudPage({
     const cols = searchColumns[table] ?? [label];
     const q = term.trim().toLowerCase();
     return data.filter((row) => {
+      if (rowFilter && !rowFilter(row)) return false;
       if (statusField && status !== "all" && row[statusField] !== status) return false;
       if (!q) return true;
       return cols.some((c) => String(row[c] ?? "").toLowerCase().includes(q));
     });
-  }, [data, term, status, statusField, table, label]);
+  }, [data, term, status, statusField, table, label, rowFilter]);
 
   return (
     <>

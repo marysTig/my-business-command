@@ -71,6 +71,7 @@ function LeadsPage() {
           { key: "email", header: "Email" },
           { key: "phone", header: "Téléphone" },
           { key: "desired_city", header: "Ville / wilaya" },
+          { key: "desired_property_type", header: "Besoin", className: "hidden lg:table-cell" },
           {
             key: "budget",
             header: "Budget (DZD)",
