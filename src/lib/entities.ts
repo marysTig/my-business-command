@@ -85,6 +85,16 @@ export const CAR_BUYER_STATUSES = [
 ] as const;
 
 // Leads — prospection (par défaut en Algérie : wilayas, +213, DZD).
+export const LEAD_SERVICES = [
+  "Site web",
+  "Boutique en ligne",
+  "SEO",
+  "Publicité",
+  "Identité visuelle",
+  "Application mobile",
+  "Autre",
+] as const;
+
 export const LEAD_STATUSES = [
   "New",
   "Contacted",
@@ -337,6 +347,7 @@ export const leadFields: Field[] = [
   { name: "email", label: "Email", type: "text" },
   { name: "phone", label: "Téléphone", type: "text", placeholder: "+213 …" },
   { name: "desired_city", label: "Ville / wilaya", type: "text", placeholder: "Alger, Oran, Constantine…" },
+  { name: "service", label: "Service", type: "select", options: LEAD_SERVICES },
   { name: "desired_property_type", label: "Besoin", type: "text", placeholder: "Site web, refonte, boutique…" },
   { name: "budget", label: "Budget estimé (DZD)", type: "number" },
   { name: "source", label: "Source", type: "text", placeholder: "Google Maps, Facebook, annuaire…" },

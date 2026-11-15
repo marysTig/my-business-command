@@ -237,7 +237,7 @@ const COMMAND_PROMPTS = {
   tasks: "List my tasks grouped by status, with due dates and priorities.",
   customers: "List my customers with their contact details.",
   projects: "List my SaaS projects with their status and progress.",
-  leads: "List my leads: how many in total, how many are website leads (desired_property_type or notes mention a site, redesign, catalog, landing or booking page), and the ones with status New. Group by status, show name, phone, city and need.",
+  leads: "List my leads: how many in total, how many are website leads (service is Site web, or desired_property_type and notes mention a site, redesign, catalog, landing or booking page), and the ones with status New. Group by status, show name, phone, city, service and need.",
   sales: "Summarise my sales: totals, amount paid and unpaid.",
   expenses: "List my personal expenses for this month and the total.",
   prospects: "List the prospect list files attached to each SaaS project.",
@@ -325,7 +325,7 @@ async function handleMessage(msg) {
         : "Tell me what to search on the live web (usage: /search <query>).";
     else if (cmd === "leads")
       question = arg
-        ? `List my leads filtered by "${arg}". Read the filter as a status (New, Contacted, Qualified, Proposal, Won, Lost), a city or wilaya, or "web" / "site" meaning a website lead (desired_property_type or notes mention a site, redesign, catalog, landing or booking page). Show name, phone, city, need and status for each.`
+        ? `List my leads filtered by "${arg}". Read the filter as a status (New, Contacted, Qualified, Proposal, Won, Lost), a city or wilaya, or a service (Site web, Boutique en ligne, SEO, Publicité, Identité visuelle, Application mobile); "web" / "site" means service Site web or a need mentioning a site, redesign, catalog, landing or booking page. Show name, phone, city, service, need and status for each.`
         : "List my leads grouped by status: total, website leads, and the New ones with phone and city.";
     else if (cmd === "add") question = arg ? `Add this: ${arg}` : "Ask me what to add.";
     else if (cmd === "edit") question = arg ? `Change this: ${arg}` : "Ask me which record to change.";

@@ -153,6 +153,7 @@ export const TABLE_COLUMNS = {
     "name",
     "notes",
     "phone",
+    "service",
     "source",
     "status",
     "updated_at",

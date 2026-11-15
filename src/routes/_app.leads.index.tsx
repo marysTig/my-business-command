@@ -71,6 +71,7 @@ function LeadsPage() {
           { key: "email", header: "Email" },
           { key: "phone", header: "Téléphone" },
           { key: "desired_city", header: "Ville / wilaya" },
+          { key: "service", header: "Service", className: "hidden md:table-cell" },
           { key: "desired_property_type", header: "Besoin", className: "hidden lg:table-cell" },
           {
             key: "budget",

@@ -70,11 +70,10 @@ function WebsiteLeadsPage() {
           { key: "name", header: "Entreprise" },
           { key: "phone", header: "Téléphone" },
           { key: "desired_city", header: "Ville / wilaya" },
-          { key: "desired_property_type", header: "Besoin" },
           {
-            key: "email",
-            header: "Email",
-            render: (row) => (row["email"] ? String(row["email"]) : "—"),
+            key: "service",
+            header: "Service",
+            render: (row) => (row["service"] ? String(row["service"]) : String(row["desired_property_type"] ?? "—")),
           },
           { key: "status", header: "Statut", render: (row) => <StatusBadge value={row["status"]} /> },
         ]}

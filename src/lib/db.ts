@@ -53,6 +53,11 @@ export function useSaveRow(table: string) {
   return useMutation({
     mutationFn: async (values: Row) => {
       const { id, ...rest } = values;
+      // `service` reaches the leads table through a migration; never send it
+      // empty, so saving works even before that migration has run.
+      if (table === "leads" && typeof rest["service"] === "string" && !rest["service"].trim()) {
+        delete rest["service"];
+      }
       if (id) {
         const { data, error } = await (supabase.from(table as never) as any)
           .update(rest)
