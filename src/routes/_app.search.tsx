@@ -33,6 +33,7 @@ const tables = [
   "digital_products",
   "customers",
   "resources",
+  "leads",
   "blackchaine_products",
   "blackchaine_clients",
   "blackchaine_orders",

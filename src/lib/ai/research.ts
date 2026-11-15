@@ -54,7 +54,12 @@ export const RESEARCH_SECTIONS: ResearchSection[] = [
     hint: "prix, demande, positionnement",
   },
   { key: "resources", label: "Ressources", tables: ["resources"], hint: "contenus à produire" },
-  { key: "leads", label: "Leads", tables: ["leads"], hint: "conversion, relances, qualification" },
+  {
+    key: "leads",
+    label: "Leads",
+    tables: ["leads"],
+    hint: "prospection Algérie : entreprises locales, wilayas, contacts, conversion, relances",
+  },
   {
     key: "properties",
     label: "Immobilier",
@@ -173,11 +178,15 @@ async function webSearchBroad(
   subject: string,
 ): Promise<ResearchSource[]> {
   const base = subject || question;
+  // Prospecting and market research are for the Algerian market by default: the
+  // searches are biased to Algeria unless the question names another country.
+  const elsewhere = /alg[ée]rie|algeria|\bdz\b|\+213/i.test(question);
+  const country = elsewhere ? "" : " Algérie";
   const queries = [
     question,
-    `${base} marché tendances actualités`,
-    `${base} concurrents offres tarifs`,
-    `${base} ${section.hint}`,
+    `${base} marché tendances actualités${country}`,
+    `${base} concurrents offres tarifs${country}`,
+    `${base} ${section.hint}${country}`,
   ];
   const batches = await Promise.all(queries.map((query) => webSearch(query, 5)));
   const seen = new Set<string>();
@@ -245,6 +254,7 @@ RULES
 - Base the answer on the web results: facts, market signals, competitors, prices, demand. Cite the URLs you used.
 - Business numbers from the snapshot are quoted exactly; if the snapshot is empty, say the dashboard is empty in one short line and move on to the research.
 - Always end the findings with a concrete "Prospects / leads" section: who to contact, why they fit, and where to find them. Name real segments, companies or directories when the results allow it.
+- PROSPECTING COUNTRY: prospects are businesses in ALGERIA (Algerian wilayas and cities, +213 phone numbers, DZD prices, .dz websites, local Facebook/Instagram pages and Algerian directories). Do not propose prospects from another country unless the user's question explicitly asks for another country. If the web results only cover other countries, say so instead of inventing Algerian contacts.
 - Never invent a company, a price or a statistic: if the web results do not cover a point, say so.
 - Propose at most ${MAX_ACTIONS} record changes, and only when the data clearly justifies them.
   Do not propose deletes. Do not touch id, created_at, user_id or other protected columns.

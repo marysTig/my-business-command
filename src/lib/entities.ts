@@ -84,6 +84,16 @@ export const CAR_BUYER_STATUSES = [
   "Lost",
 ] as const;
 
+// Leads — prospection (par défaut en Algérie : wilayas, +213, DZD).
+export const LEAD_STATUSES = [
+  "New",
+  "Contacted",
+  "Qualified",
+  "Proposal",
+  "Won",
+  "Lost",
+] as const;
+
 export const VELORA_ORDER_STATUSES = [
   "New",
   "Confirmed",
@@ -322,6 +332,18 @@ export const blackchaineExpenseFields: Field[] = [
   { name: "notes", label: "Notes", type: "textarea" },
 ];
 
+export const leadFields: Field[] = [
+  { name: "name", label: "Entreprise", type: "text", required: true },
+  { name: "email", label: "Email", type: "text" },
+  { name: "phone", label: "Téléphone", type: "text", placeholder: "+213 …" },
+  { name: "desired_city", label: "Ville / wilaya", type: "text", placeholder: "Alger, Oran, Constantine…" },
+  { name: "desired_property_type", label: "Besoin", type: "text", placeholder: "Site web, refonte, boutique…" },
+  { name: "budget", label: "Budget estimé (DZD)", type: "number" },
+  { name: "source", label: "Source", type: "text", placeholder: "Google Maps, Facebook, annuaire…" },
+  { name: "status", label: "Statut", type: "select", options: LEAD_STATUSES },
+  { name: "notes", label: "Notes", type: "textarea" },
+];
+
 export const EXPENSE_CATEGORIES = [
   "Alimentation",
   "Transport",
@@ -411,6 +433,7 @@ export const labelColumn: Record<string, string> = {
   digital_products: "product_name",
   customers: "name",
   resources: "name",
+  leads: "name",
 };
 
 export const searchColumns: Record<string, string[]> = {
@@ -429,6 +452,7 @@ export const searchColumns: Record<string, string[]> = {
   digital_products: ["product_name", "description", "notes"],
   customers: ["name", "email", "phone", "notes"],
   resources: ["name", "url", "category", "description", "notes"],
+  leads: ["name", "email", "phone", "desired_city", "desired_property_type", "source", "notes"],
 };
 
 export const entityRoutes: Record<string, string> = {
@@ -447,6 +471,7 @@ export const entityRoutes: Record<string, string> = {
   digital_products: "/products",
   customers: "/customers",
   resources: "/resources",
+  leads: "/leads",
 };
 
 export const entityLabels: Record<string, string> = {
@@ -464,6 +489,7 @@ export const entityLabels: Record<string, string> = {
   digital_products: "Digital Products",
   customers: "Customers",
   resources: "Resources",
+  leads: "Leads",
 };
 
 export const entityFields: Record<string, Field[]> = {
@@ -483,4 +509,5 @@ export const entityFields: Record<string, Field[]> = {
   customers: customerFields,
   resources: resourceFields,
   sales: saleFields,
+  leads: leadFields,
 };

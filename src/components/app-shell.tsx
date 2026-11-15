@@ -14,6 +14,7 @@ import {
   Settings,
   Shirt,
   Sparkles,
+  Target,
   Users,
   Wallet,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, testId: "nav-dashboard" },
   { to: "/tasks", label: "Tasks", icon: CheckSquare, testId: "nav-tasks" },
   { to: "/research", label: "Recherches", icon: Sparkles, testId: "nav-research" },
+  { to: "/leads", label: "Leads", icon: Target, testId: "nav-leads" },
   { to: "/websites", label: "Client Websites", icon: Globe, testId: "nav-websites" },
   {
     to: "/saas",

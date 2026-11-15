@@ -22,6 +22,7 @@ import { Route as AppBlackchaineIndexRouteImport } from './routes/_app.blackchai
 import { Route as AppCarsIndexRouteImport } from './routes/_app.cars.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
 import { Route as AppCustomersIdRouteImport } from './routes/_app.customers.$id'
+import { Route as AppLeadsIndexRouteImport } from './routes/_app.leads.index'
 import { Route as AppProductsIndexRouteImport } from './routes/_app.products.index'
 import { Route as AppProductsIdRouteImport } from './routes/_app.products.$id'
 import { Route as AppSaasIndexRouteImport } from './routes/_app.saas.index'
@@ -96,6 +97,11 @@ const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
   path: '/customers/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLeadsIndexRoute = AppLeadsIndexRouteImport.update({
+  id: '/leads/',
+  path: '/leads/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProductsIndexRoute = AppProductsIndexRouteImport.update({
   id: '/products/',
   path: '/products/',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/blackchaine/': typeof AppBlackchaineIndexRoute
   '/cars/': typeof AppCarsIndexRoute
   '/customers/': typeof AppCustomersIndexRoute
+  '/leads/': typeof AppLeadsIndexRoute
   '/products/': typeof AppProductsIndexRoute
   '/saas/': typeof AppSaasIndexRoute
   '/velora/': typeof AppVeloraIndexRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByTo {
   '/blackchaine': typeof AppBlackchaineIndexRoute
   '/cars': typeof AppCarsIndexRoute
   '/customers': typeof AppCustomersIndexRoute
+  '/leads': typeof AppLeadsIndexRoute
   '/products': typeof AppProductsIndexRoute
   '/saas': typeof AppSaasIndexRoute
   '/velora': typeof AppVeloraIndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_app/blackchaine/': typeof AppBlackchaineIndexRoute
   '/_app/cars/': typeof AppCarsIndexRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
+  '/_app/leads/': typeof AppLeadsIndexRoute
   '/_app/products/': typeof AppProductsIndexRoute
   '/_app/saas/': typeof AppSaasIndexRoute
   '/_app/velora/': typeof AppVeloraIndexRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/blackchaine/'
     | '/cars/'
     | '/customers/'
+    | '/leads/'
     | '/products/'
     | '/saas/'
     | '/velora/'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/blackchaine'
     | '/cars'
     | '/customers'
+    | '/leads'
     | '/products'
     | '/saas'
     | '/velora'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_app/blackchaine/'
     | '/_app/cars/'
     | '/_app/customers/'
+    | '/_app/leads/'
     | '/_app/products/'
     | '/_app/saas/'
     | '/_app/velora/'
@@ -384,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/leads/': {
+      id: '/_app/leads/'
+      path: '/leads'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof AppLeadsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/products/': {
       id: '/_app/products/'
       path: '/products'
@@ -467,6 +486,7 @@ interface AppRouteChildren {
   AppBlackchaineIndexRoute: typeof AppBlackchaineIndexRoute
   AppCarsIndexRoute: typeof AppCarsIndexRoute
   AppCustomersIndexRoute: typeof AppCustomersIndexRoute
+  AppLeadsIndexRoute: typeof AppLeadsIndexRoute
   AppProductsIndexRoute: typeof AppProductsIndexRoute
   AppSaasIndexRoute: typeof AppSaasIndexRoute
   AppVeloraIndexRoute: typeof AppVeloraIndexRoute
@@ -490,6 +510,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBlackchaineIndexRoute: AppBlackchaineIndexRoute,
   AppCarsIndexRoute: AppCarsIndexRoute,
   AppCustomersIndexRoute: AppCustomersIndexRoute,
+  AppLeadsIndexRoute: AppLeadsIndexRoute,
   AppProductsIndexRoute: AppProductsIndexRoute,
   AppSaasIndexRoute: AppSaasIndexRoute,
   AppVeloraIndexRoute: AppVeloraIndexRoute,
