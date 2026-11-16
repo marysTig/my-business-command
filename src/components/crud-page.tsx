@@ -229,7 +229,8 @@ export function CrudPage({
             </TableBody>
           </Table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        {/* The floating assistant bubble sits bottom-right, so keep this bar above it. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-20 text-sm">
           <p className="text-muted-foreground" data-testid="crud-page-info">
             {`${firstIndex + 1}–${Math.min(firstIndex + pageSize, rows.length)} sur ${rows.length}`}
           </p>
