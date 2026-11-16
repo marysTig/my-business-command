@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MoreHorizontal, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Search } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 
 import { ConfirmDelete } from "@/components/confirm-delete";
@@ -37,6 +37,7 @@ export function CrudPage({
   toolbar,
   emptyTitle,
   rowFilter,
+  pageSize = 40,
 }: {
   table: string;
   title: string;
@@ -49,6 +50,8 @@ export function CrudPage({
   emptyTitle?: string;
   /** Keeps only the rows that belong to this sub-section. */
   rowFilter?: (row: Row) => boolean;
+  /** Rows shown at a time; the rest is reachable with « Suivant ». */
+  pageSize?: number;
 }) {
   const { data = [], isLoading } = useRows(table, {});
   const del = useDeleteRow(table);
@@ -57,6 +60,7 @@ export function CrudPage({
   const [editing, setEditing] = useState<Row | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
+  const [page, setPage] = useState(0);
 
   const label = labelColumn[table] ?? "name";
 
@@ -70,6 +74,11 @@ export function CrudPage({
       return cols.some((c) => String(row[c] ?? "").toLowerCase().includes(q));
     });
   }, [data, term, status, statusField, table, label, rowFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const firstIndex = currentPage * pageSize;
+  const pageRows = rows.slice(firstIndex, firstIndex + pageSize);
 
   return (
     <>
@@ -99,7 +108,10 @@ export function CrudPage({
           <Input
             value={term}
             data-testid="crud-search"
-            onChange={(e) => setTerm(e.target.value)}
+            onChange={(e) => {
+              setTerm(e.target.value);
+              setPage(0);
+            }}
             placeholder={`Search ${title.toLowerCase()}…`}
             className="pl-9"
           />
@@ -109,7 +121,10 @@ export function CrudPage({
             aria-label="Filtrer par statut"
             data-testid="crud-status-filter"
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(0);
+            }}
             className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-52"
           >
             <option value="all">All statuses</option>
@@ -140,6 +155,7 @@ export function CrudPage({
           }
         />
       ) : (
+        <div className="space-y-3">
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
           <Table>
             <TableHeader>
@@ -154,7 +170,7 @@ export function CrudPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
+              {pageRows.map((row) => (
                 <TableRow key={row["id"]} data-testid={`row-${row["id"]}`}>
                   {columns.map((c, i) => (
                     <TableCell key={c.key} className={c.className}>
@@ -212,6 +228,35 @@ export function CrudPage({
               ))}
             </TableBody>
           </Table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-muted-foreground" data-testid="crud-page-info">
+            {`${firstIndex + 1}–${Math.min(firstIndex + pageSize, rows.length)} sur ${rows.length}`}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="crud-prev"
+              disabled={currentPage === 0}
+              onClick={() => setPage(Math.max(0, currentPage - 1))}
+            >
+              <ChevronLeft className="size-4" /> Précédent
+            </Button>
+            <span className="tabular-nums text-muted-foreground" data-testid="crud-page-number">
+              Page {currentPage + 1} / {pageCount}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              data-testid="crud-next"
+              disabled={currentPage >= pageCount - 1}
+              onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))}
+            >
+              Suivant <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
         </div>
       )}
 
