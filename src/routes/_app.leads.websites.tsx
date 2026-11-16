@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
+import { ExportLeadsButton } from "@/components/export-leads-button";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRows } from "@/lib/db";
@@ -66,6 +67,7 @@ function WebsiteLeadsPage() {
         statusOptions={LEAD_STATUSES}
         rowFilter={isWebsiteLead}
         emptyTitle="Aucun lead site web"
+        toolbar={<ExportLeadsButton fileName="leads-sites-web" rowFilter={isWebsiteLead} />}
         columns={[
           { key: "name", header: "Entreprise" },
           { key: "phone", header: "Téléphone" },

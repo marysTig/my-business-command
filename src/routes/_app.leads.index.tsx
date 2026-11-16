@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
+import { ExportLeadsButton } from "@/components/export-leads-button";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRows } from "@/lib/db";
@@ -66,6 +67,7 @@ function LeadsPage() {
         description="Prospects à contacter en Algérie : entreprise, contact, ville, budget et statut."
         statusField="status"
         statusOptions={LEAD_STATUSES}
+        toolbar={<ExportLeadsButton fileName="leads-algerie" />}
         columns={[
           { key: "name", header: "Entreprise" },
           { key: "email", header: "Email" },
