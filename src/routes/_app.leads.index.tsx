@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRows } from "@/lib/db";
 import { LEAD_STATUSES } from "@/lib/entities";
+import { LEAD_COUNTRIES, leadCountry } from "@/lib/leads";
 
 export const Route = createFileRoute("/_app/leads/")({
   head: () => ({
@@ -67,6 +68,7 @@ function LeadsPage() {
         description="Prospects à contacter en Algérie : entreprise, contact, ville, budget et statut."
         statusField="status"
         statusOptions={LEAD_STATUSES}
+        countryFilter={{ options: LEAD_COUNTRIES, match: (row, value) => leadCountry(row) === value }}
         toolbar={<ExportLeadsButton fileName="leads-algerie" />}
         columns={[
           { key: "name", header: "Entreprise" },

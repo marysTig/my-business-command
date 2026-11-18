@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRows } from "@/lib/db";
 import { LEAD_STATUSES } from "@/lib/entities";
-import { isWebsiteLead } from "@/lib/leads";
+import { isWebsiteLead, LEAD_COUNTRIES, leadCountry } from "@/lib/leads";
 
 export const Route = createFileRoute("/_app/leads/websites")({
   head: () => ({
@@ -66,6 +66,7 @@ function WebsiteLeadsPage() {
         statusField="status"
         statusOptions={LEAD_STATUSES}
         rowFilter={isWebsiteLead}
+        countryFilter={{ options: LEAD_COUNTRIES, match: (row, value) => leadCountry(row) === value }}
         emptyTitle="Aucun lead site web"
         toolbar={<ExportLeadsButton fileName="leads-sites-web" rowFilter={isWebsiteLead} />}
         columns={[

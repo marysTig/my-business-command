@@ -38,6 +38,7 @@ export function CrudPage({
   emptyTitle,
   rowFilter,
   pageSize = 40,
+  countryFilter,
 }: {
   table: string;
   title: string;
@@ -52,11 +53,17 @@ export function CrudPage({
   rowFilter?: (row: Row) => boolean;
   /** Rows shown at a time; the rest is reachable with « Suivant ». */
   pageSize?: number;
+  /** Optional country picker; `match` decides which rows belong to a value. */
+  countryFilter?: {
+    options: readonly string[];
+    match: (row: Row, value: string) => boolean;
+  };
 }) {
   const { data = [], isLoading } = useRows(table, {});
   const del = useDeleteRow(table);
   const [term, setTerm] = useState("");
   const [status, setStatus] = useState("all");
+  const [country, setCountry] = useState("all");
   const [editing, setEditing] = useState<Row | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState<Row | null>(null);
@@ -70,10 +77,11 @@ export function CrudPage({
     return data.filter((row) => {
       if (rowFilter && !rowFilter(row)) return false;
       if (statusField && status !== "all" && row[statusField] !== status) return false;
+      if (countryFilter && country !== "all" && !countryFilter.match(row, country)) return false;
       if (!q) return true;
       return cols.some((c) => String(row[c] ?? "").toLowerCase().includes(q));
     });
-  }, [data, term, status, statusField, table, label, rowFilter]);
+  }, [data, term, status, statusField, table, label, rowFilter, countryFilter, country]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
@@ -116,6 +124,25 @@ export function CrudPage({
             className="pl-9"
           />
         </div>
+        {countryFilter ? (
+          <select
+            aria-label="Filtrer par pays"
+            data-testid="crud-country-filter"
+            value={country}
+            onChange={(e) => {
+              setCountry(e.target.value);
+              setPage(0);
+            }}
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:w-44"
+          >
+            <option value="all">Tous les pays</option>
+            {countryFilter.options.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        ) : null}
         {statusField && statusOptions ? (
           <select
             aria-label="Filtrer par statut"
