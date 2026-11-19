@@ -52,3 +52,8 @@ supabase/new-project/
 
 # Build artefacts
 .build-log.txt
+
+# clé Brevo déposée localement, jamais committée
+.brevo-secret.txt
+.brevo-sender-email.txt
+.brevo-sender-name.txt

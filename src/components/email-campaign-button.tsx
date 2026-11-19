@@ -70,6 +70,19 @@ function readDraft(defaultCountry: string): Draft {
 
 const hasEmail = (row: Row) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(row["email"] ?? "").trim());
 
+/** Même rendu que le serveur : chaque lead reçoit sa propre version du message. */
+function renderForLead(template: string, lead: Row, senderName: string): string {
+  const entreprise = String(lead["name"] ?? "").trim() || "votre entreprise";
+  const ville = String(lead["desired_city"] ?? "").trim() || "votre commune";
+  const email = String(lead["email"] ?? "").trim();
+  const expediteur = senderName.trim() || "Mon entreprise";
+  return template
+    .replace(/\{\{\s*(entreprise|nom|name)\s*\}\}/gi, entreprise)
+    .replace(/\{\{\s*(ville|city)\s*\}\}/gi, ville)
+    .replace(/\{\{\s*email\s*\}\}/gi, email)
+    .replace(/\{\{\s*(expediteur|sender)\s*\}\}/gi, expediteur);
+}
+
 /**
  * Envoie un e-mail personnalisé aux leads sélectionnés (par pays).
  *
@@ -96,6 +109,7 @@ export function EmailCampaignButton({
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [summary, setSummary] = useState<{ sent: number; failed: number; errors: string[] } | null>(null);
+  const [previewId, setPreviewId] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -150,6 +164,7 @@ export function EmailCampaignButton({
 
   const limit = Number(draft.limit) || 10;
   const targets = recipients.slice(0, limit);
+  const previewLead = targets.find((row) => String(row["id"]) === previewId) ?? targets[0];
   const canSend =
     config?.configured === true &&
     !busy &&
@@ -337,8 +352,52 @@ export function EmailCampaignButton({
                 onChange={(e) => set("body", e.target.value)}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Variables : {"{{entreprise}}"}, {"{{ville}}"}, {"{{email}}"}, {"{{expediteur}}"}.
+                Chaque lead reçoit sa propre version : {"{{entreprise}}"} devient son nom, {"{{ville}}"} sa commune,{" "}
+                {"{{email}}"} son adresse et {"{{expediteur}}"} le nom expéditeur. Variables disponibles :{" "}
+                {"{{entreprise}}"}, {"{{ville}}"}, {"{{email}}"}, {"{{expediteur}}"}.
               </p>
+            </div>
+
+            <div className="sm:col-span-2 rounded-lg border border-border bg-muted/40 p-3" data-testid="leads-email-preview">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor="leads-email-preview-lead" className="text-sm">
+                  Aperçu personnalisé
+                </Label>
+                <select
+                  id="leads-email-preview-lead"
+                  aria-label="Lead à prévisualiser"
+                  data-testid="leads-email-preview-lead"
+                  value={previewLead ? String(previewLead["id"]) : ""}
+                  onChange={(e) => setPreviewId(e.target.value)}
+                  disabled={targets.length === 0}
+                  className="h-8 max-w-full rounded-md border border-input bg-background px-2 text-xs shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  {targets.length === 0 ? <option value="">Aucun destinataire</option> : null}
+                  {targets.map((row) => (
+                    <option key={String(row["id"])} value={String(row["id"])}>
+                      {String(row["name"] ?? "Sans nom")} — {String(row["desired_city"] ?? "ville inconnue")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {previewLead ? (
+                <div className="mt-2 space-y-2 text-xs">
+                  <p className="text-muted-foreground">
+                    À : {String(previewLead["email"] ?? "")} · Objet :{" "}
+                    <span className="font-medium text-foreground">
+                      {renderForLead(draft.subject, previewLead, draft.senderName)}
+                    </span>
+                  </p>
+                  <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words font-sans text-foreground">
+                    {renderForLead(draft.body, previewLead, draft.senderName)}
+                  </pre>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Aucun lead avec e-mail pour ce filtre : choisissez un autre pays ou décochez « Ignorer les leads déjà
+                  contactés ».
+                </p>
+              )}
             </div>
 
             <div className="sm:col-span-2 flex flex-wrap items-center gap-4">
