@@ -21,6 +21,10 @@ import { leadCountry } from "@/lib/leads";
 
 const CHUNK = 10;
 const DRAFT_KEY = "leads-email-draft";
+/** Plafond quotidien de l'offre gratuite Brevo (renouvelé chaque jour). */
+const DAILY_QUOTA = 300;
+/** Le serveur accepte 25 destinataires par requête ; le client découpe tout seul. */
+const PER_REQUEST = 25;
 
 const DEFAULT_SUBJECT = "Un site web pour {{entreprise}}";
 
@@ -55,7 +59,7 @@ function readDraft(defaultCountry: string): Draft {
     senderEmail: "",
     subject: DEFAULT_SUBJECT,
     body: DEFAULT_BODY,
-    limit: "10",
+    limit: "25",
     skipContacted: true,
   };
   try {
@@ -162,8 +166,9 @@ export function EmailCampaignButton({
     });
   }, [data, draft.country, draft.skipContacted, rowFilter]);
 
-  const limit = Number(draft.limit) || 10;
+  const limit = Math.min(Math.max(Math.trunc(Number(draft.limit) || 25), 1), DAILY_QUOTA);
   const targets = recipients.slice(0, limit);
+  const requests = Math.max(Math.ceil(targets.length / PER_REQUEST), 0);
   const previewLead = targets.find((row) => String(row["id"]) === previewId) ?? targets[0];
   const canSend =
     config?.configured === true &&
@@ -281,21 +286,24 @@ export function EmailCampaignButton({
 
             <div>
               <Label htmlFor="leads-email-limit" className="mb-1.5 block text-sm">
-                Nombre par envoi
+                Combien d'e-mails personnalisés
               </Label>
-              <select
+              <Input
                 id="leads-email-limit"
-                aria-label="Nombre d'e-mails par envoi"
+                aria-label="Nombre d'e-mails personnalisés à envoyer"
                 data-testid="leads-email-limit"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={DAILY_QUOTA}
+                step={1}
                 value={draft.limit}
                 onChange={(e) => set("limit", e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-              </select>
+              />
+              <p className="mt-1 text-xs text-muted-foreground" data-testid="leads-email-capacity">
+                Jusqu'à {DAILY_QUOTA} par jour (offre gratuite) · {requests} requête
+                {requests > 1 ? "s" : ""} de {PER_REQUEST} maximum, gérée automatiquement.
+              </p>
             </div>
 
             <div>
@@ -411,7 +419,8 @@ export function EmailCampaignButton({
                 Ignorer les leads déjà contactés
               </label>
               <span className="text-sm text-muted-foreground" data-testid="leads-email-count">
-                {recipients.length} lead{recipients.length > 1 ? "s" : ""} avec e-mail — {targets.length} dans ce lot
+                {recipients.length} lead{recipients.length > 1 ? "s" : ""} disponible{recipients.length > 1 ? "s" : ""} avec e-mail —{" "}
+                {targets.length} dans ce lot{recipients.length > targets.length ? ` (sur ${recipients.length})` : ""}
               </span>
             </div>
           </div>
