@@ -107,7 +107,7 @@ export function EmailCampaignButton({
   const { data = [] } = useRows("leads", {});
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(() => readDraft(defaultCountry));
-  const [config, setConfig] = useState<{ configured: boolean; sender_email: string | null; missing: string[] } | null>(
+  const [config, setConfig] = useState<{ configured: boolean; sender_email: string | null; sender_name: string | null; missing: string[] } | null>(
     null,
   );
   const [busy, setBusy] = useState(false);
@@ -125,22 +125,24 @@ export function EmailCampaignButton({
         const payload = await response.json();
         if (cancelled) return;
         if (!response.ok) {
-          setConfig({ configured: false, sender_email: null, missing: payload?.missing ?? [] });
+          setConfig({ configured: false, sender_email: null, sender_name: null, missing: payload?.missing ?? [] });
           return;
         }
         setConfig({
           configured: Boolean(payload.configured),
           sender_email: payload.sender_email ?? null,
+          sender_name: payload.sender_name ?? null,
           missing: payload.missing ?? [],
         });
-        setDraft((prev) =>
-          prev.senderEmail || !payload.sender_email
-            ? prev
-            : { ...prev, senderEmail: String(payload.sender_email) },
-        );
+        // Expéditeur déjà vérifié dans Brevo : on le préremplit, l'utilisateur n'a rien à saisir.
+        setDraft((prev) => ({
+          ...prev,
+          senderEmail: prev.senderEmail || String(payload.sender_email ?? ""),
+          senderName: prev.senderName || String(payload.sender_name ?? ""),
+        }));
       })
       .catch(() => {
-        if (!cancelled) setConfig({ configured: false, sender_email: null, missing: [] });
+        if (!cancelled) setConfig({ configured: false, sender_email: null, sender_name: null, missing: [] });
       });
     return () => {
       cancelled = true;
@@ -318,6 +320,7 @@ export function EmailCampaignButton({
                 placeholder="Votre nom ou votre entreprise"
                 onChange={(e) => set("senderName", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">Déjà configuré dans Brevo — laissez tel quel.</p>
             </div>
 
             <div>
@@ -332,6 +335,9 @@ export function EmailCampaignButton({
                 placeholder="contact@votre-domaine.fr"
                 onChange={(e) => set("senderEmail", e.target.value)}
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Adresse vérifiée dans Brevo — laissez tel quel (une autre adresse doit d'abord être confirmée dans Brevo).
+              </p>
             </div>
 
             <div className="sm:col-span-2">
