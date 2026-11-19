@@ -24,6 +24,11 @@
  *   GET    /api/prospect-files?project_id=|project=   Word/Excel files of a SaaS project
  *   POST   /api/prospect-files      multipart: file + project_id or project -> uploads it
  *   DELETE /api/prospect-files/:id  removes a prospect file
+ *   GET    /api/leads/email         email sending config (provider, sender, missing vars)
+ *   POST   /api/leads/email         { lead_ids | country, subject, body, sender_email,
+ *                                   sender_name?, reply_to?, dry_run?, skip_contacted?,
+ *                                   mark_contacted? } -> sends one personalized email per
+ *                                   lead (max 25 per request) via Brevo
  *   GET    /api/tables              every table with its readable/writable columns
  *   GET    /api/records/:table      rows; query params are filters (?status=eq.Active),
  *                                   plus limit (1-500), offset, order, asc, select
@@ -40,6 +45,7 @@
  */
 
 import { ACCESS_CODE } from "@/lib/access-code";
+import { leadEmailConfig, sendProspectingEmails } from "@/lib/api/lead-email";
 import { runLoop, type Message } from "@/lib/ai/client";
 import {
   TABLE_COLUMNS,
@@ -637,7 +643,10 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
     request.method === "POST" &&
     (request.headers.get("content-type") ?? "").toLowerCase().includes("application/json");
   const gateCode = (request.headers.get("x-access-code") ?? "").trim();
-  const authorizedByCode = isJsonProspectImport && gateCode.length > 0 && safeEqual(gateCode, ACCESS_CODE);
+  // The leads email composer is a browser action too: the access code is enough.
+  const isLeadEmail = path === "/api/leads/email";
+  const authorizedByCode =
+    (isJsonProspectImport || isLeadEmail) && gateCode.length > 0 && safeEqual(gateCode, ACCESS_CODE);
 
   if (!authorizedByCode && !safeEqual(presentedKey(request), expected)) {
     return json(
@@ -666,6 +675,8 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
           "GET /api/prospect-files?project_id=|project=",
           "POST /api/prospect-files",
           "DELETE /api/prospect-files/:id",
+          "GET /api/leads/email",
+          "POST /api/leads/email",
           "GET /api/tables",
           "GET /api/records/:table?<column>=<value>&limit=&offset=&order=&asc=&select=",
           "GET /api/records/:table/:id",
@@ -677,6 +688,12 @@ export async function handleDashboardApi(request: Request): Promise<Response | n
         filter_operators: ["eq", "neq", "gt", "gte", "lt", "lte", "ilike", "is"],
         docs: "Every endpoint accepts the key in Authorization: Bearer <key> or X-API-Key.",
       });
+    }
+
+    if (path === "/api/leads/email") {
+      if (request.method === "GET") return json(leadEmailConfig());
+      if (request.method === "POST") return await sendProspectingEmails(request);
+      throw new HttpError(405, "Use GET or POST.");
     }
 
     if (path === "/api/prospect-files") {

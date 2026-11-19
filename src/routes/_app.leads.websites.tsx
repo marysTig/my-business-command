@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { CrudPage } from "@/components/crud-page";
+import { EmailCampaignButton } from "@/components/email-campaign-button";
 import { ExportLeadsButton } from "@/components/export-leads-button";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +69,12 @@ function WebsiteLeadsPage() {
         rowFilter={isWebsiteLead}
         countryFilter={{ options: LEAD_COUNTRIES, match: (row, value) => leadCountry(row) === value }}
         emptyTitle="Aucun lead site web"
-        toolbar={<ExportLeadsButton fileName="leads-sites-web" rowFilter={isWebsiteLead} />}
+        toolbar={
+          <>
+            <ExportLeadsButton fileName="leads-sites-web" rowFilter={isWebsiteLead} />
+            <EmailCampaignButton rowFilter={isWebsiteLead} defaultCountry="France" />
+          </>
+        }
         columns={[
           { key: "name", header: "Entreprise" },
           { key: "email", header: "Email" },
