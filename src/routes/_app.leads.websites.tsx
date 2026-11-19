@@ -71,6 +71,7 @@ function WebsiteLeadsPage() {
         toolbar={<ExportLeadsButton fileName="leads-sites-web" rowFilter={isWebsiteLead} />}
         columns={[
           { key: "name", header: "Entreprise" },
+          { key: "email", header: "Email" },
           { key: "phone", header: "Téléphone" },
           { key: "desired_city", header: "Ville / wilaya" },
           {
