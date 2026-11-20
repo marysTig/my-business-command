@@ -117,7 +117,12 @@ export function EmailCampaignButton({
   );
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [summary, setSummary] = useState<{ sent: number; failed: number; errors: string[] } | null>(null);
+  const [summary, setSummary] = useState<{
+    sent: number;
+    failed: number;
+    errors: string[];
+    notice?: string | null;
+  } | null>(null);
   const [previewId, setPreviewId] = useState("");
 
   useEffect(() => {
@@ -199,6 +204,7 @@ export function EmailCampaignButton({
     let failed = 0;
     const errors: string[] = [];
     let stopped = false;
+    let notice: string | null = null;
 
     for (let index = 0; index < targets.length; index += CHUNK) {
       const batch = targets.slice(index, index + CHUNK);
@@ -223,6 +229,13 @@ export function EmailCampaignButton({
           if (!result.ok) errors.push(`${result.email} : ${result.error}`);
         }
         setProgress({ done: Math.min(index + CHUNK, targets.length), total: targets.length });
+        // Brevo a coupé l'envoi (compte non activé, quota, clé refusée) : inutile
+        // d'insister sur les lots suivants, on s'arrête et on affiche la raison.
+        if (payload.aborted) {
+          notice = String(payload.hint ?? "Envoi interrompu par Brevo.");
+          stopped = true;
+          break;
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Envoi impossible");
         stopped = true;
@@ -232,7 +245,7 @@ export function EmailCampaignButton({
 
     setProgress(null);
     setBusy(false);
-    setSummary({ sent, failed, errors });
+    setSummary({ sent, failed, errors, notice });
     qc.invalidateQueries({ queryKey: ["leads"] });
     if (sent > 0) toast.success(`${sent} e-mail${sent > 1 ? "s" : ""} envoyé${sent > 1 ? "s" : ""}`);
     if (!stopped && failed > 0) toast.error(`${failed} envoi${failed > 1 ? "s" : ""} en échec`);
@@ -456,6 +469,11 @@ export function EmailCampaignButton({
                 <strong>{summary.sent}</strong> envoyé{summary.sent > 1 ? "s" : ""} ·{" "}
                 <strong>{summary.failed}</strong> en échec
               </p>
+              {summary.notice ? (
+                <p className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+                  {summary.notice}
+                </p>
+              ) : null}
               {summary.errors.length > 0 ? (
                 <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-xs text-destructive">
                   {summary.errors.slice(0, 20).map((error) => (

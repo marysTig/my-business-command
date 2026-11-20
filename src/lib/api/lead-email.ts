@@ -37,7 +37,15 @@ type SendResult = {
   name: string;
   ok: boolean;
   error?: string;
+  /** Erreur qui condamne tout le reste de l'envoi (compte non activé, quota…). */
+  fatal?: boolean;
 };
+
+/** Brevo répond 403 tant que le compte n'est pas activé : réessayer ne sert à rien. */
+function isAccountBlocked(status: number, detail: string): boolean {
+  if (status !== 403) return false;
+  return /not yet activated|not activated|account is not activated|activate your account/i.test(detail);
+}
 
 function env(name: string): string | undefined {
   const value = process.env[name]?.trim();
@@ -209,6 +217,9 @@ async function sendOne(input: {
       } catch {
         if (detail) message = `${message} — ${detail.slice(0, 200)}`;
       }
+      if (isAccountBlocked(response.status, detail)) {
+        return { ...base, ok: false, error: message, fatal: true };
+      }
       return { ...base, ok: false, error: message };
     }
     return { ...base, ok: true };
@@ -317,6 +328,7 @@ export async function sendProspectingEmails(request: Request): Promise<Response>
   }
 
   const results: SendResult[] = [];
+  let aborted = false;
   for (const [index, lead] of valid.entries()) {
     if (index > 0) await sleep(SEND_DELAY_MS);
     const result = await sendOne({
@@ -330,6 +342,11 @@ export async function sendProspectingEmails(request: Request): Promise<Response>
     });
     results.push(result);
     if (result.ok && mark) await markContacted(lead);
+    // Compte bloqué : on arrête tout de suite au lieu de brûler les lots restants.
+    if (result.fatal) {
+      aborted = true;
+      break;
+    }
   }
 
   const sent = results.filter((r) => r.ok).length;
@@ -338,6 +355,15 @@ export async function sendProspectingEmails(request: Request): Promise<Response>
     sender: { email: senderEmail, name: senderName },
     sent,
     failed: results.length - sent,
+    skipped: valid.length - results.length,
+    aborted,
+    ...(aborted
+      ? {
+          hint:
+            "Brevo refuse l'envoi : le compte n'est pas encore activé. Termine l'activation dans Brevo (vérification du numéro de téléphone et des informations d'entreprise) ou écris à contact@brevo.com pour demander l'activation, puis relance. Les leads non traités restent en statut New.",
+          setup: "https://app.brevo.com/settings/account",
+        }
+      : {}),
     results,
   });
 }
