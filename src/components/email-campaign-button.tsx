@@ -20,7 +20,7 @@ import { useRows, type Row } from "@/lib/db";
 import { leadCountry } from "@/lib/leads";
 
 const CHUNK = 10;
-const DRAFT_KEY = "leads-email-draft";
+const DRAFT_KEY = "leads-email-draft-v2";
 /** Plafond quotidien de l'offre gratuite Brevo (renouvelé chaque jour). */
 const DAILY_QUOTA = 300;
 /** Le serveur accepte 25 destinataires par requête ; le client découpe tout seul. */
@@ -30,14 +30,19 @@ const DEFAULT_SUBJECT = "Un site web pour {{entreprise}}";
 
 const DEFAULT_BODY = `Bonjour,
 
-Je me permets de vous écrire car j'accompagne les entreprises de {{ville}} dans la création de sites web : site vitrine, refonte, catalogue en ligne ou prise de rendez-vous.
+Je me permets de vous contacter au nom de CONURON, spécialisé dans la création de sites web professionnels et de solutions digitales.
 
-Un site clair et rapide vous permet d'être trouvé sur Google et de rassurer vos clients avant même le premier contact.
+Nous accompagnons les entreprises de {{ville}} dans la conception de sites vitrines, la refonte de sites existants, les catalogues en ligne et les systèmes de prise de rendez-vous.
 
-Si cela vous intéresse, répondez simplement à cet e-mail : je vous envoie deux ou trois exemples et un tarif précis, sans engagement.
+Notre objectif est de vous aider à valoriser votre activité, renforcer votre présence sur Internet et offrir à vos futurs clients une expérience professionnelle dès leur première visite.
+
+N'hésitez pas à me communiquer vos disponibilités afin que nous puissions échanger sur votre projet.
 
 Bien cordialement,
-{{expediteur}}
+
+L'équipe CONURON
+Création de sites web & solutions digitales
+https://www.conuron.com/
 
 --
 Message adressé à l'adresse professionnelle publiée par {{entreprise}}. Pour ne plus être contacté, répondez « STOP ».`;
